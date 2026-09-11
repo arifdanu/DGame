@@ -1,26 +1,105 @@
-# Petualangan Pulau Pintar
+# Petualangan Krakatau Pintar
 
-Game edukasi berbahasa Indonesia untuk Dinar (7 tahun) dan Delisha (5 tahun). Bersama Kiko, anak menjelajahi empat pulau untuk menyalakan mercusuar persahabatan. React + Vite + TypeScript strict, tanpa backend, akun online, API berbayar, atau environment variable wajib.
+Game edukasi sandbox 3D berbahasa Indonesia untuk **Dinar (7 tahun, kelas 2 SD)** dan **Delisha (5 tahun, persiapan SD)**. Jelajahi pulau, temui guru, kumpulkan benda alam, bermain huruf, dan hitung bintang. Dunia dan tiga avatar dibuat secara procedural dengan geometry low-poly; tanpa backend, login, chat, iklan, pembelian, atau aset karakter game lain.
 
-## Jalankan lokal
+Mode lama **Petualangan Pulau Pintar** tetap tersedia di `/classic/`: 24 level, 120 aktivitas, panel orang tua dengan PIN, batas waktu, TTS, dan progres lama tidak dihapus. [Panduan mode latihan lama](docs/CLASSIC.md). Semua rute dalam panduan lama kini memakai awalan `/classic`; bookmark `/map`, `/play/...`, `/parent`, `/session`, dan `/rest` dialihkan otomatis.
 
-Gunakan Node.js 22.12+ atau Node.js 24 LTS dan npm.
+## Menjalankan
+
+Node.js **22.12+** atau 24 LTS, npm, dan browser dengan WebGL 2.
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Buka alamat lokal yang dicetak Vite. Pada kunjungan pertama orang tua membuat PIN enam digit, lalu memilih profil. Tidak ada PIN default. Pengaturan awal 15 menit per profil per hari.
+Buka alamat yang dicetak Vite. Mulai dari **Mulai Bermain → pilih profil → pilih satu dari tiga avatar → Mulai Petualangan**. Jika port 5173 sedang digunakan, Vite memilih port berikutnya. Untuk menguji perangkat lain di jaringan lokal:
+
+```bash
+npm run dev -- --host 0.0.0.0
+```
+
+Buka alamat jaringan yang dicetak Vite pada tablet/HP; gunakan landscape. Game tidak membutuhkan secret atau environment variable.
+
+## Build dan deploy Vercel
 
 ```bash
 npm run build
 npm run preview
 ```
 
-Output produksi ada di `dist`. Jangan membuka `index.html` melalui `file://`; Web Crypto dan Web Locks memerlukan localhost atau HTTPS.
+`npm run build` menjalankan TypeScript strict dan membuat output Vite di `dist/`. Import repository ke Vercel, pilih preset **Vite**, install command `npm ci`, build command `npm run build`, output directory `dist`. `vercel.json` sudah menyediakan SPA fallback ke `index.html`, dengan `/assets/` dikecualikan. Tidak ada ketergantungan filesystem lokal atau URL localhost pada kode produksi. Deploy belum dilakukan dalam pekerjaan ini.
 
-## Pengujian
+React dipatok pada seri **19.2.x** karena peer dependency React Three Fiber yang dipakai belum menerima React 19.3. Gunakan `npm ci` agar versi mengikuti lockfile; jangan menggunakan `--force` atau `--legacy-peer-deps` untuk memaksa upgrade React.
+
+## Kontrol
+
+| Desktop/laptop | Fungsi |
+| --- | --- |
+| W A S D atau tombol panah | Berjalan mengikuti arah kamera |
+| Space | Melompat; bisa melewati/berdiri di batu rendah |
+| E atau tombol interaksi di layar | Bicara, ambil benda, buka papan saat berada dalam jarak 2,65 meter |
+| Geser mouse pada dunia | Putar kamera |
+| Tombol putar kiri/kanan | Alternatif pengaturan kamera |
+| Tombol ◎ | Reset kamera |
+| Esc / tombol pause | Jeda; progres tidak hilang |
+| Klik minimap | Buka peta besar dengan posisi dan tujuan |
+| Klik kartu misi / buku | Progres misi dan lencana |
+
+Pada perangkat touch: joystick kiri bawah untuk berjalan, **Lompat** dan **Ambil / bicara** di kanan, serta tombol kamera. Joystick tidak tampil pada desktop dengan pointer presisi. Beralih tab otomatis menjeda permainan. Dialog, peta, kuis, dan menu juga menghentikan simulasi.
+
+## Dunia dan misi
+
+- **Desa Belajar:** rumah sederhana, petunjuk arah, jalan, dan Bu Guru Sains di jalan utama.
+- **Pantai Sains:** pasir, laut, pohon palem, dermaga, perahu, batu, daun, dan kerang.
+- **Hutan Bahasa:** pepohonan low-poly dan papan huruf.
+- **Taman Hitung Bintang:** lima bintang yang dapat dikumpulkan setelah misi huruf.
+- **Pusat Sains:** laboratorium, Pak Guru Alam, dan meja eksperimen di teras. Klub Peneliti Kecil terbuka setelah misi sains.
+- **Krakatau:** pulau gunung terpisah di utara, kawah hangat dan asap kecil; tidak dapat dimasuki, tanpa ledakan atau bencana.
+
+| Misi | Delisha | Dinar | Hadiah |
+| --- | --- | --- | --- |
+| Temui Bu Guru Sains | Dialog dua halaman, mulai misi | Dialog dua halaman, mulai misi | 5 bintang + Sahabat Guru |
+| Temukan 3 Benda Sains | Kenali daun dari tumbuhan | Mengenal fotosintesis | 1 per benda + 5 dan Peneliti Alam |
+| Hutan Huruf | Cocokkan A dengan apel | Susun B-U-K-U dengan mengetuk huruf | 5 + Sahabat Huruf |
+| Hitung Bintang | Hitung 5 bintang | 7 + 5 | 1 per bintang + 5 dan Bintang Berhitung |
+
+Empat misi menghasilkan **28 bintang dan 4 lencana**. Benda hilang setelah diambil; hadiah misi dan benda tidak bisa diberikan dua kali. Jawaban salah memunculkan penjelasan dan tombol coba lagi tanpa mengurangi bintang. Jika kuis ditutup sebelum hadiah diambil, buka kembali lewat Bu Guru (sains), papan huruf, atau papan hitung. Posisi awal kembali ke jalan desa saat melanjutkan permainan.
+
+Meja eksperimen menawarkan latihan bergilir: warna, bentuk, hewan, penjumlahan, dan angka sampai 10 untuk Delisha; pengurangan, perkalian dasar, bahasa Inggris, dan membaca kalimat untuk Dinar. Setiap latihan benar memberi 2 bintang; latihan tambahan boleh diulang.
+
+## Progres dan privasi
+
+- Data 3D disimpan pada localStorage **`krakatau-pintar:v1`**, versi 1.
+- Menyimpan profil aktif, avatar, misi selesai, benda koleksi, bintang koleksi, jumlah hadiah, lencana, area terbuka, putaran latihan tambahan, dan mute.
+- Progres Dinar dan Delisha dipisahkan. Reset meminta konfirmasi dan hanya menghapus progres 3D profil yang dipilih.
+- Data mode lama pada **`pulau-pintar:v1`** tetap terpisah dan tidak dimigrasikan atau dihapus.
+- Tidak ada kiriman profil ke server, analytics, mikrofon, kamera, atau layanan pihak ketiga.
+- Penyimpanan gagal memunculkan peringatan. Data rusak atau versi asing diblokir dan nilai aslinya tidak ditimpa. Untuk pemulihan: salin key tersebut melalui DevTools sebagai cadangan, perbaiki/pulihkan salinan valid, lalu reload. Jangan unggah data keluarga ke repository. Menghapus data situs juga akan menghapus progres.
+- Gunakan satu tab 3D untuk satu perangkat; penulisan simultan lintas tab belum dilindungi kunci transaksi.
+
+**PIN, batas harian, dan aturan durasi mode latihan lama berlaku hanya di `/classic/`.** Mode 3D ini belum mengintegrasikan timer/panel tersebut. Tombol panel orang tua diberi label “mode latihan 2D” agar cakupannya jelas.
+
+## Struktur implementasi
+
+```text
+src/App.tsx                      Pemilihan mode, lazy loading, redirect bookmark lama
+src/LegacyApp.tsx                Router latihan lama dengan basename /classic
+src/game/Adventure.tsx          Alur layar, interaksi, dan HUD
+src/game/avatars/Avatar.tsx      Tiga avatar, idle/jalan/lompat
+src/game/world/                  Terrain, bangunan, gunung, instancing pohon, benda interaktif
+src/game/player/                 Kontrol keyboard/drag, kamera, gravitasi dan collision
+src/game/missions/progress.ts    State misi, syarat unlock, reward idempotent
+src/game/data/                   Profil, avatar, koordinat dunia, bank kuis, tipe
+src/game/ui/                     Home/Profile/AvatarScreen, dialog, kuis, peta, touch controls
+src/game/utils/                  Validasi localStorage dan suara Web Audio
+src/game/game.css                UI responsif, layout landscape, reduced motion UI
+src/pages/, content/, engine/    Seluruh fitur latihan lama dipertahankan
+```
+
+Untuk menambah misi, tambahkan ID/tipe, data kuis per profil, objek dunia, aturan transisi pada `progress.ts`, dan interaksi. Jangan mengubah ID benda yang sudah tersimpan tanpa migrasi skema. Objek solid dan kamera memakai proxy collision yang sama di `data/world.ts`. Tambahkan pengujian syarat unlock dan hadiah bila aturan berubah.
+
+## Validasi
 
 ```bash
 npm run lint
@@ -30,99 +109,21 @@ npm run build
 npm run test:e2e
 ```
 
-Playwright memakai **Google Chrome yang sudah terpasang** secara default. Alternatif di komputer atau CI yang belum memiliki Chrome:
+Playwright memakai Google Chrome yang terpasang. Alternatif untuk CI:
 
 ```bash
 npx playwright install chromium
 PLAYWRIGHT_CHANNEL=chromium npm run test:e2e
 ```
 
-Tes membuat profil dan PIN sintetis di konteks browser terisolasi. Tidak memakai progres atau PIN keluarga. Waktu diuji dengan mock clock; tidak perlu menunggu 15 menit. Rincian hasil aktual terdapat di `docs/PROGRESS.md`. Screenshot tampilan terdapat di `docs/` setelah tes visual dijalankan. Laporan HTML dan trace kegagalan berada di `playwright-report/` dan `test-results/` (diabaikan Git).
+Tes browser menggunakan konteks baru dan data sintetis, tidak menyentuh progres keluarga. Suite baru menjalankan perjalanan Dinar melalui gerakan keyboard nyata, semua misi dan hadiah, jawaban salah/coba lagi, reload, pemisahan profil, pencocokan huruf Delisha, reset selektif, serta joystick di viewport landscape. Tes unit memeriksa syarat misi, hadiah ganda, data rusak, collision, dan jarak aman kamera. Hasil aktual dan screenshot dicatat di [laporan 3D](docs/KRAKATAU.md).
 
-## Isi dan struktur
+## Batasan MVP dan fase berikutnya
 
-- `src/content/levels.ts`: 24 level, 120 aktivitas; 12 ide aktivitas offline.
-- `src/content/branches.ts`: kelanjutan cerita sesuai tindakan di Desa Kebaikan.
-- `src/types.ts`: model profil, aktivitas, sesi, dan progres.
-- `src/engine/`: penilaian, solusi terbimbing, unlock, lencana, statistik, PIN dan timer.
-- `src/storage/`: penyimpanan berversi, validasi struktur, dan peringatan kegagalan.
-- `src/hooks/`: penguncian tab, waktu aktif, TTS, state browser, API WebMCP opsional.
-- `src/components/`: komponen visual, PIN, dan interaksi reusable.
-- `src/pages/`: setup, profil, peta, permainan, penutup sesi, kegiatan offline, panel orang tua.
-- `public/assets/`: ilustrasi lokal. Asal aset dan prompt ada di `docs/ASSETS.md`.
-- `tests/`, `e2e/`: pengujian unit/komponen dan browser.
-
-Untuk menambah level, gunakan fungsi `add` pada bank konten. Setiap aktivitas wajib memiliki instruksi, adegan, data interaksi, petunjuk, penjelasan, tujuan, profil, tingkat, dan ID stabil. Engine mendukung pilihan, cerita bercabang, urutan ketuk, hitung objek, keypad dengan kelompok visual, dan grid. Pilihan cerita memerlukan kelanjutan untuk setiap jawaban. Hindari mengganti ID yang sudah dipakai karena progres merujuk pada ID tersebut. Tambahkan kunci dan kasus uji, lalu jalankan seluruh pemeriksaan.
-
-## Progres dan batas bermain
-
-Semua pulau terbuka; level 2 dan 3 terbuka bertahap. Satu level terdiri atas lima aktivitas. Setelah dua kesalahan, contoh terbimbing tampil dan harus diakui sebelum lanjut. Tidak ada nyawa, penalti, hadiah kecepatan, leaderboard, iklan, atau pembelian.
-
-Satu lencana tetap per level, termasuk bila level diulang. Sesi maksimal tiga penyelesaian level (pengulangan juga dihitung), lalu penutup wajib dengan tombol **Selesai & Istirahat**. Tidak ada sesi baru otomatis. Progres per aktivitas tersimpan saat berinteraksi; waktu tersimpan setiap detik, pada perubahan visibilitas, `pagehide`, dan keluar dari permainan. Waktu berjalan hanya saat layar permainan terlihat, aktif, tutorial ditutup, dan tidak dijeda. Hari dihitung dalam zona **Asia/Jakarta**; jatah harian 10/15/20/30 menit berlaku lintas sesi, refresh, dan pergantian profil.
-
-Satu profil hanya dapat membuka permainan di satu tab menggunakan Web Locks. Browser tanpa Web Locks diminta diperbarui; aplikasi tidak mencoba mekanisme penguncian yang rentan balapan. Semua data mutasi membaca penyimpanan terbaru agar pembaruan profil berbeda tidak memakai snapshot lama. Jika penyimpanan gagal, peringatan tampil dan sesi dipertahankan dalam memori; menutup tab saat itu dapat kehilangan perubahan yang belum tersimpan.
-
-Statistik menyimpan percobaan, bantuan, benar pertama, dan terbimbing secara terpisah. Akurasi memakai aktivitas selesai sebagai penyebut; terbimbing tidak dihitung benar mandiri. Panel menunjukkan penyelesaian pertama setiap aktivitas; pengulangan tidak menimpa hasil pertama atau menggandakan lencana. Aktivitas yang belum selesai tetap tercatat dalam jumlah bantuan dan percobaan. Durasi dihitung per profil dan per pulau; level selesai, akurasi, percobaan, dan bantuan ditampilkan per kemampuan.
-
-## PIN dan keterbatasan penyimpanan lokal
-
-PIN diturunkan dengan **PBKDF2-HMAC-SHA-256**, 210.000 iterasi dan salt acak 16 byte. Yang disimpan hanya salt dan hasil derivasi 32 byte. Setelah lima PIN salah, ada cooldown 30 detik yang bertahan setelah refresh. Akses panel ada dalam memori dan terkunci kembali saat reload, keluar route, atau tab masuk background. Hapus progres memerlukan PIN ulang dan konfirmasi kedua; catatan waktu dan batas harian tidak dihapus oleh tindakan ini.
-
-**PIN dan batas lokal bukan keamanan kuat.** Penghapusan data browser, manipulasi perangkat, atau perangkat lain dapat melewatinya. Data tidak tersinkron, tidak dicadangkan di server, dan bisa hilang jika data situs dibersihkan. Tidak ada bypass pada layar anak dan tidak ada pemulihan PIN lewat email.
-
-Data disimpan pada key `pulau-pintar:v1` dengan `schemaVersion: 1`. Data yang rusak atau versinya tidak dikenali **tidak ditimpa atau dihapus**; permainan diblokir dengan peringatan. Pemulihan dilakukan orang tua/pengelola perangkat:
-
-1. Tutup tab permainan lain. Melalui DevTools → Application/Storage → Local Storage, salin nilai asli key tersebut ke berkas cadangan pribadi.
-2. Minta pengembang memeriksa skema dan memperbaiki salinan, atau pulihkan cadangan valid milik browser/profil yang sama. Jangan memasukkan cadangan ke repository.
-3. Jika tidak ada cadangan dan orang tua memutuskan memulai ulang, penghapusan data situs melalui pengaturan browser akan menghilangkan seluruh progres dan PIN. Ini tindakan manual di luar game, bukan tombol bypass untuk anak.
-
-## Audio, aksesibilitas, dan privasi
-
-Tombol Dengarkan memakai `speechSynthesis` setelah interaksi pengguna. Suara Indonesia dipilih dari voice perangkat, termasuk pembaruan `voiceschanged`. Jika browser/TTS/suara Indonesia tidak tersedia, pemberitahuan teks tampil; suara tidak dijanjikan pada semua perangkat. Ucapan dibatalkan ketika pindah layar, jeda, mute, atau waktu habis.
-
-Navigasi keyboard, focus visible, dialog modal, tombol minimal 48 px, alternatif ketuk untuk penyusunan, bentuk/simbol selain warna, dan reduced motion tersedia. Semua aset dimuat lokal; font memakai font sistem. Tidak ada mikrofon, kamera, lokasi, chat, analytics, tracking, atau pengiriman profil ke server. Beberapa materi huruf menggunakan simbol emoji perangkat sebagai petunjuk gambar; peta dan karakter menggunakan ilustrasi orisinal lokal.
-
-Materi adalah latihan umum, bukan diagnosis perkembangan, klaim peningkatan IQ, atau materi yang diklaim resmi selaras kurikulum. Sebaiknya dimainkan dengan pendamping, khususnya pada cerita keselamatan dan literasi awal.
-
-## Push ke repository GitHub baru
-
-Tindakan berikut dilakukan sendiri setelah meninjau kode; tugas implementasi ini tidak melakukan push atau deploy.
-
-1. Buat repository GitHub kosong. Jangan unggah localStorage, PIN nyata, berkas cadangan, atau trace pribadi.
-2. Dari direktori proyek:
-
-```bash
-git status
-git add .
-git commit -m "Bangun Petualangan Pulau Pintar"
-git branch -M main
-git remote add origin <URL_REPOSITORY_BARU>
-git push -u origin main
-```
-
-Jika `origin` sudah ada, periksa `git remote -v` dan gunakan repository tujuan yang benar; jangan menimpa remote tanpa memeriksanya.
-
-## Publish melalui Vercel
-
-1. Di Vercel, pilih **Add New → Project**, lalu import repository GitHub baru.
-2. Framework preset **Vite**; install command `npm ci`; build command `npm run build`; output directory `dist`.
-3. Gunakan Node.js 22.12+ atau 24. Tidak ada environment variable wajib.
-4. Tinjau preview deployment, lalu publish production ketika siap.
-
-`vercel.json` menyediakan SPA fallback ke `/index.html` untuk rute aplikasi, dengan `/assets/` dikecualikan supaya berkas statis tidak diarahkan ke HTML. Konfigurasi mengacu pada [panduan Vite di Vercel](https://vercel.com/docs/frameworks/frontend/vite) dan [rewrites](https://vercel.com/docs/routing/rewrites). Vite preview memeriksa deep link lokal; konfigurasi edge Vercel tetap harus diperiksa setelah deploy.
-
-### Smoke test setelah deploy
-
-- Buka di HP 360 px dan laptop; pastikan peta, Kiko, dan ikon termuat tanpa scroll horizontal.
-- Buat PIN baru, pilih Delisha, selesaikan level Angka; refresh dan periksa lencana.
-- Pilih Dinar; pastikan soal dan progres berbeda.
-- Muat langsung dan refresh `/map`, `/play/dinar-angka-1`, dan `/parent`.
-- Pastikan `/assets/islands.png` dan `/assets/kiko.png` memiliki MIME gambar; URL aset yang tidak ada tidak menampilkan aplikasi.
-- Buka profil sama di dua tab, pastikan tab kedua diblokir.
-- Coba bantuan, dua jawaban salah, dengarkan/mute, jeda, dan keluar/simpan.
-- Pastikan panel meminta PIN setelah refresh; periksa batas harian dan penutup tiga level.
-- Coba TTS pada perangkat sasaran dan pastikan fallback terlihat jika suara Indonesia tidak tersedia.
-
-## Batasan pengujian
-
-Hasil nyata dan hal yang belum diverifikasi dicatat di `docs/PROGRESS.md`. Production Vercel, Safari/Firefox, pembaca layar, suara Indonesia pada perangkat keluarga, serta uji kegunaan langsung bersama anak memerlukan pemeriksaan lanjutan. API WebMCP eksperimental hanya mengekspos daftar aktivitas offline publik ketika browser mendukungnya; fungsi game tidak bergantung padanya.
+- Semua aset 3D berupa geometry procedural; belum ada terrain kompleks, interior laboratorium, berenang, atau naik perahu. Pintu menjelaskan bahwa kegiatan berlangsung di teras.
+- Collision memakai lingkaran sederhana, bukan engine fisika penuh. Hati adalah indikator energi dekoratif; tidak berkurang dan tidak ada sistem kalah.
+- Efek klik, koleksi, lompat, dan misi selesai dibuat dengan Web Audio. Belum ada musik latar atau narasi lisan di mode 3D. Mute tersedia.
+- WebGL 2 dan akselerasi grafis diperlukan; perangkat tanpa dukungan tersebut mendapat pesan dan tautan latihan 2D. Pengujian mobile memakai emulasi Chrome, belum perangkat keluarga nyata atau Safari/Firefox.
+- Progres tidak disinkronkan antarperangkat, posisi avatar belum disimpan. Penyimpanan kuis dilakukan pada hadiah; kuis yang belum diselesaikan bisa dibuka kembali.
+- Bundle 3D lebih besar daripada UI biasa karena Three.js; Vite dapat menampilkan peringatan ukuran chunk. Rendering memakai geometry sederhana, pohon instanced, satu lampu bayangan, DPR maksimal 1,5, pembatas delta, dan berhenti saat pause.
+- Fase berikutnya: uji langsung bersama Dinar/Delisha; sambungkan timer dan panel orang tua ke mode 3D; tambah narasi Indonesia, variasi soal, ekspor/cadangan progres, dan pengujian perangkat touch fisik.

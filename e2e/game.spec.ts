@@ -31,7 +31,7 @@ async function fixture(profile: ProfileId = "delisha"): Promise<AppData> {
   return d;
 }
 async function seed(page: Page, data: AppData) {
-  await page.goto("/");
+  await page.goto("/classic/");
   await page.evaluate(
     ({ key, data }) => {
       localStorage.setItem(key, JSON.stringify(data));
@@ -41,7 +41,7 @@ async function seed(page: Page, data: AppData) {
   );
 }
 async function setup(page: Page) {
-  await page.goto("/");
+  await page.goto("/classic/");
   await page.getByLabel("Buat PIN enam digit").fill(testPin);
   await page.getByLabel("Ulangi PIN").fill(testPin);
   await page.getByRole("button", { name: "Simpan & pilih penjelajah" }).click();
@@ -110,7 +110,7 @@ async function solve(page: Page, a: Activity) {
     .click();
 }
 async function playLevel(page: Page, l: Level) {
-  await page.goto(`/play/${l.id}`);
+  await page.goto(`/classic/play/${l.id}`);
   await expect(
     page.getByRole("heading", {
       name: l.activities[0].instruction,
@@ -148,7 +148,7 @@ test("setup → Delisha → level lengkap → reload dan deep link", async ({
   const d = await stored(page);
   expect(d.profiles.delisha.badges).toEqual(["delisha-angka-1"]);
   expect(d.profiles.dinar.badges).toEqual([]);
-  await page.goto("/parent");
+  await page.goto("/classic/parent");
   await page.reload();
   await expect(page.getByRole("button", { name: "Buka panel" })).toBeVisible();
   expect(errors).toEqual([]);
@@ -176,7 +176,7 @@ test("Dinar mendapatkan materi berbeda tanpa mencampur progres", async ({
   const d = await fixture("dinar");
   d.profiles.delisha.badges = ["delisha-angka-1"];
   await seed(page, d);
-  await page.goto("/map");
+  await page.goto("/classic/map");
   await page.getByRole("button", { name: /Jelajahi Pulau Angka/ }).click();
   await page.getByRole("button", { name: /Jembatan Bilangan/ }).click();
   await tutorial(page);
@@ -192,7 +192,7 @@ test("batas harian, peringatan, dan refresh dengan clock mock", async ({
   await seed(page, d);
   await page.clock.install({ time: new Date("2026-09-10T10:00:00+07:00") });
   await page.clock.pauseAt(new Date("2026-09-10T10:00:01+07:00"));
-  await page.goto("/play/delisha-angka-1");
+  await page.goto("/classic/play/delisha-angka-1");
   await expect(
     page.getByRole("button", { name: "kerang 1", exact: true }),
   ).toBeEnabled();
@@ -221,7 +221,7 @@ test("jeda, keluar, pergantian profil, dan refresh tidak menghapus waktu", async
   await seed(page, d);
   await page.clock.install({ time: new Date("2026-09-10T10:00:00+07:00") });
   await page.clock.pauseAt(new Date("2026-09-10T10:00:01+07:00"));
-  await page.goto("/play/delisha-angka-1");
+  await page.goto("/classic/play/delisha-angka-1");
   await expect(
     page.getByRole("button", { name: "kerang 1", exact: true }),
   ).toBeEnabled();
@@ -235,7 +235,7 @@ test("jeda, keluar, pergantian profil, dan refresh tidak menghapus waktu", async
   await page.getByRole("button", { name: "Keluar ke peta" }).click();
   await page.reload();
   expect((await stored(page)).profiles.delisha.usage["2026-09-10"]).toBe(40000);
-  await page.goto("/");
+  await page.goto("/classic/");
   await page.getByRole("button", { name: "Main sebagai Dinar" }).click();
   expect((await stored(page)).profiles.dinar.usage).toEqual({});
   expect((await stored(page)).profiles.delisha.usage["2026-09-10"]).toBe(40000);
@@ -245,7 +245,7 @@ test("PIN salah, cooldown, dan akses langsung tetap terkunci", async ({
 }) => {
   await seed(page, await fixture());
   await page.clock.install();
-  await page.goto("/parent");
+  await page.goto("/classic/parent");
   for (let i = 0; i < 5; i++) {
     await page.getByLabel("PIN enam digit").fill("000000");
     await page.getByRole("button", { name: "Buka panel" }).click();
@@ -268,16 +268,16 @@ test("profil yang sama tidak dapat bermain di dua tab", async ({
   const d = await fixture();
   d.profiles.delisha.tutorial = true;
   await seed(page, d);
-  await page.goto("/play/delisha-angka-1");
+  await page.goto("/classic/play/delisha-angka-1");
   await expect(
     page.getByRole("button", { name: "kerang 1", exact: true }),
   ).toBeEnabled();
   const other = await context.newPage();
-  await other.goto("/play/delisha-angka-1");
+  await other.goto("/classic/play/delisha-angka-1");
   await expect(
     other.getByRole("heading", { name: "Kiko sedang bermain di tab lain" }),
   ).toBeVisible();
-  await page.goto("/map");
+  await page.goto("/classic/map");
   await other.reload();
   await expect(
     other.getByRole("button", { name: "kerang 1", exact: true }),
@@ -289,7 +289,7 @@ test("dua kesalahan menampilkan contoh dan menyimpan statistik terbimbing", asyn
   const d = await fixture();
   d.profiles.delisha.tutorial = true;
   await seed(page, d);
-  await page.goto("/play/delisha-angka-1");
+  await page.goto("/classic/play/delisha-angka-1");
   await page.getByRole("button", { name: "kerang 1", exact: true }).click();
   await page.getByRole("button", { name: "Bantuan", exact: true }).click();
   await page.getByRole("button", { name: "Periksa jawaban" }).click();
@@ -333,7 +333,7 @@ test("tiga level menutup sesi dan tidak memulai sesi otomatis", async ({
   ).toBeVisible();
   await page.reload();
   expect((await stored(page)).profiles.delisha.session?.ended).toBe(true);
-  await page.goto("/play/delisha-angka-1");
+  await page.goto("/classic/play/delisha-angka-1");
   await expect(page).toHaveURL(/\/session$/);
   await page.getByRole("button", { name: "Selesai & Istirahat" }).click();
   await expect(page).toHaveURL(/\/rest$/);
@@ -350,7 +350,7 @@ test("mobile 360 dan desktop: layout, gambar lokal, keyboard, tanpa error", asyn
     { width: 360, height: 800 },
   ]) {
     await page.setViewportSize(size);
-    await page.goto("/map");
+    await page.goto("/classic/map");
     await expect(
       page.getByRole("button", { name: /Jelajahi Hutan Kata/ }),
     ).toBeVisible();
@@ -380,7 +380,7 @@ test("mobile 360 dan desktop: layout, gambar lokal, keyboard, tanpa error", asyn
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).not.toBeVisible();
-  await page.goto("/play/delisha-angka-1");
+  await page.goto("/classic/play/delisha-angka-1");
   await tutorial(page);
   expect(
     await page.evaluate(
@@ -397,7 +397,7 @@ test("panel mengubah batas dan PIN, hapus progres perlu dua konfirmasi", async (
   d.profiles.delisha.badges = ["delisha-angka-1"];
   d.profiles.delisha.usage["2026-09-10"] = 45000;
   await seed(page, d);
-  await page.goto("/parent");
+  await page.goto("/classic/parent");
   await page.getByLabel("PIN enam digit").fill(testPin);
   await page.getByRole("button", { name: "Buka panel" }).click();
   await page.getByLabel("Batas harian Delisha").selectOption("10");
@@ -431,7 +431,7 @@ test("panel mengubah batas dan PIN, hapus progres perlu dua konfirmasi", async (
   await page.screenshot({ path: "docs/parent-360.png", fullPage: true });
 });
 test("data rusak dipertahankan dan permainan diblokir", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/classic/");
   await page.evaluate(
     (key) => localStorage.setItem(key, '{"rusak":'),
     STORAGE_KEY,
@@ -452,7 +452,7 @@ test("background menghentikan hitungan, visible melanjutkan", async ({
   await seed(page, d);
   await page.clock.install({ time: new Date("2026-09-10T10:00:00+07:00") });
   await page.clock.pauseAt(new Date("2026-09-10T10:00:01+07:00"));
-  await page.goto("/play/delisha-angka-1");
+  await page.goto("/classic/play/delisha-angka-1");
   await expect(
     page.getByRole("button", { name: "kerang 1", exact: true }),
   ).toBeEnabled();
