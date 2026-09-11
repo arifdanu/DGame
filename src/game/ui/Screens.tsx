@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { WorldBoundary } from "../world/World";
 import { Avatar } from "../avatars/Avatar";
+import { mapTotals } from "../maps/mapRegistry";
 import { AVATARS, PROFILES, ZONES } from "../data/world";
 import type { AvatarId, ProfileId, SaveData } from "../data/types";
 export function Brand() {
@@ -108,7 +109,7 @@ export function HomeScreen({
         <span className="caption-pin">✦</span>
         <div>
           <strong>Selamat datang di pulaumu</strong>
-          <span>4 tempat istimewa untuk dijelajahi</span>
+          <span>2 map · 15 area untuk dijelajahi</span>
         </div>
       </div>
       <div className="zone-strip">
@@ -179,8 +180,8 @@ export function ProfileScreen({
             <p>{PROFILES[id].note}</p>
             <span className="profile-progress">
               <Star size={18} />
-              {data.profiles[id].points} bintang <span>·</span>{" "}
-              {data.profiles[id].completed.length}/4 misi
+              {mapTotals(data.profiles[id]).points} bintang <span>·</span>{" "}
+              {mapTotals(data.profiles[id]).missions}/16 misi
             </span>
             <span className="k-button primary">
               Pilih {PROFILES[id].name}

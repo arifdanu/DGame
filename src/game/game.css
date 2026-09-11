@@ -2164,3 +2164,339 @@
     top: 365px;
   }
 }
+/* Expedition map selection and data-driven mission panels. */
+.map-choices {
+  max-width: 1020px;
+  margin: 10px auto 25px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  padding: 0 24px;
+}
+.map-choice {
+  border: 1px solid #dce5d5;
+  background: #fffdf5;
+  border-radius: 25px;
+  overflow: hidden;
+  box-shadow: 0 7px 0 #e4ebda;
+}
+.map-preview {
+  height: 225px;
+  position: relative;
+  background: #e5ecd7;
+  padding: 15px;
+}
+.map-choice.raja-ampat .map-preview {
+  background: #dceef0;
+}
+.map-preview .island-map.large {
+  height: 190px;
+  width: 190px;
+  max-height: 190px;
+  transform: rotate(-9deg);
+  box-shadow: 0 7px 20px #42604d15;
+  margin: 0 auto;
+}
+.map-size-tag {
+  position: absolute;
+  bottom: 13px;
+  right: 15px;
+  font-size: 10px;
+  background: #fffcebde;
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: #587665;
+}
+.map-choice-copy {
+  padding: 23px 27px;
+}
+.map-choice h2 {
+  font-size: 25px;
+  margin: 12px 0;
+}
+.map-choice p {
+  font-size: 12px;
+  color: #7e8d7a;
+  min-height: 42px;
+}
+.map-status {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: #94764e;
+}
+.map-status.open {
+  color: #5b855b;
+}
+.map-stats {
+  display: flex;
+  gap: 22px;
+  margin: 18px 0;
+  font-size: 11px;
+  color: #71856b;
+}
+.map-stats > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.map-choice .k-button {
+  width: 100%;
+}
+.last-map {
+  display: block;
+  text-align: center;
+  font-size: 10px;
+  margin-top: 15px;
+  color: #89967e;
+}
+.map-choice.locked .map-preview {
+  filter: saturate(0.55);
+}
+.hud-map-name {
+  display: block;
+  font-size: 9px;
+  color: #728772;
+  margin-top: 6px;
+}
+.expansion-sign {
+  font-size: 11px;
+  max-width: 170px;
+  white-space: normal;
+  text-align: center;
+  display: block;
+}
+.sample-label {
+  background: #fff9e8e6;
+  padding: 4px 8px;
+  border-radius: 7px;
+  font-size: 11px;
+  white-space: nowrap;
+  color: #4e6e66;
+  font-weight: 800;
+}
+.expansion-mission-list p {
+  font-size: 11px;
+  margin: 7px 0;
+  line-height: 1.5;
+}
+.expansion-mission-list .k-text-button {
+  padding: 4px 0;
+  font-size: 11px;
+  min-height: 40px;
+}
+.npc-quest-list {
+  display: grid;
+  gap: 16px;
+}
+.npc-quest-list section {
+  background: #f0f2e5;
+  border: 1px solid #dfe5d0;
+  padding: 17px;
+  border-radius: 15px;
+}
+.npc-quest-list h3 {
+  font-size: 18px;
+}
+.npc-quest-list p {
+  font-size: 12px;
+}
+.npc-quest-list small {
+  font-size: 11px;
+  color: #7c886b;
+}
+.npc-quest-list .k-button {
+  font-size: 12px;
+  min-height: 45px;
+}
+.quest-status {
+  font-size: 10px;
+  font-weight: 800;
+  color: #93866d;
+}
+.quest-status.active {
+  color: #658652;
+}
+.quest-status.completed {
+  color: #477b63;
+}
+.quest-complete {
+  font-size: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.npc-missions {
+  max-width: 560px;
+}
+@media (max-width: 760px) {
+  .map-choices {
+    gap: 16px;
+    padding: 0 18px;
+  }
+  .map-preview {
+    height: 160px;
+    padding: 8px;
+  }
+  .map-preview .island-map.large {
+    width: 135px;
+    height: 135px;
+  }
+  .map-size-tag {
+    font-size: 7px;
+    bottom: 8px;
+    right: 8px;
+    padding: 5px;
+  }
+  .map-choice-copy {
+    padding: 16px;
+  }
+  .map-choice h2 {
+    font-size: 19px;
+  }
+  .map-choice p {
+    font-size: 10px;
+  }
+  .map-stats {
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 10px;
+  }
+  .map-status {
+    font-size: 8px;
+  }
+  .map-choice .k-button {
+    font-size: 12px;
+    padding: 11px;
+  }
+  .hud-map-name {
+    font-size: 8px;
+    max-width: 200px;
+  }
+  .map-choice {
+    border-radius: 19px;
+  }
+  .map-choices .last-map {
+    font-size: 8px;
+  }
+  .playing .mission-card {
+    max-width: 380px;
+  }
+}
+@media (max-width: 520px) and (orientation: portrait) {
+  .map-choices {
+    grid-template-columns: 1fr;
+  }
+  .map-choice {
+    display: grid;
+    grid-template-columns: 115px 1fr;
+  }
+  .map-preview {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 0;
+  }
+  .map-preview .island-map.large {
+    width: 115px;
+    height: 125px;
+    transform: rotate(-5deg);
+  }
+  .map-size-tag {
+    left: 8px;
+    right: 8px;
+    text-align: center;
+    bottom: 10px;
+  }
+  .map-choice-copy {
+    padding: 16px 14px;
+  }
+  .map-choice h2 {
+    font-size: 19px;
+  }
+  .map-choice p {
+    min-height: 0;
+    font-size: 10px;
+    margin-bottom: 8px;
+  }
+  .map-stats {
+    margin: 12px 0;
+  }
+  .map-choice .k-button {
+    min-height: 44px;
+  }
+  .map-selector .selection-title h1 {
+    font-size: 29px;
+  }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  .map-choices {
+    max-width: 780px;
+    gap: 18px;
+    margin: 0 auto;
+  }
+  .map-choice {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+  }
+  .map-preview {
+    height: 100%;
+    padding: 8px;
+    display: grid;
+    place-items: center;
+  }
+  .map-preview .island-map.large {
+    width: 110px;
+    height: 120px;
+  }
+  .map-choice-copy {
+    padding: 14px;
+  }
+  .map-choice h2 {
+    font-size: 18px;
+    margin: 8px 0;
+  }
+  .map-choice p {
+    font-size: 9px;
+    min-height: 0;
+    margin: 6px 0 10px;
+  }
+  .map-status {
+    font-size: 8px;
+  }
+  .map-stats {
+    gap: 10px;
+    font-size: 9px;
+    margin: 10px 0;
+  }
+  .map-choice .k-button {
+    min-height: 42px;
+    font-size: 12px;
+  }
+  .last-map {
+    display: none;
+  }
+  .map-size-tag {
+    bottom: 10px;
+    right: 5px;
+    left: 5px;
+    font-size: 7px;
+    text-align: center;
+  }
+  .hud-map-name {
+    font-size: 7px;
+    margin: 0 0 4px;
+  }
+  .npc-quest-list {
+    grid-template-columns: 1fr 1fr;
+  }
+  .npc-quest-list section {
+    padding: 12px;
+  }
+  .npc-quest-list .k-button {
+    padding: 8px 10px;
+    min-height: 43px;
+  }
+}

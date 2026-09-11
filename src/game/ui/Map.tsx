@@ -1,74 +1,118 @@
-import { OBJECTS, ZONES } from "../data/world";
-import type { Point } from "../data/types";
+import { MAPS } from "../maps/mapRegistry";
+import type { Point, MapId } from "../data/types";
 export function IslandMap({
   position,
   target,
   large = false,
+  mapId = "krakatau",
 }: {
   position: Point;
   target: string;
   large?: boolean;
+  mapId?: MapId;
 }) {
-  const objective = OBJECTS.find((o) => o.id === target)!;
+  const map = MAPS[mapId],
+    objective = map.objects.find((o) => o.id === target);
   return (
     <svg
-      viewBox="-34 -39 68 77"
+      viewBox="-44 -47 88 93"
       className={`island-map ${large ? "large" : ""}`}
       role="img"
-      aria-label="Peta pulau. Titik gelap adalah posisimu, lingkaran kuning tujuan misi."
+      aria-label={`Peta ${map.name}. Titik gelap adalah posisimu, lingkaran kuning tujuan misi, segitiga guru.`}
     >
-      <rect x="-34" y="-39" width="68" height="77" rx="12" fill="#b4dedd" />
-      <path d="M-9-35 0-43 8-35Z" fill="#759b88" />
-      <text x="0" y="-29" textAnchor="middle" fontSize="3.5" fill="#385c50">
-        U
+      <rect
+        x="-44"
+        y="-47"
+        width="88"
+        height="93"
+        rx="12"
+        fill={mapId === "krakatau" ? "#b4dedd" : "#92d4da"}
+      />
+      <text x="0" y="-41" textAnchor="middle" fontSize="4" fill="#385c50">
+        U ↑
       </text>
-      <circle r="29" fill="#eddaaa" />
-      <ellipse cx="-2" cy="-2" rx="24" ry="25" fill="#a6c88a" />
-      <path
-        d="M0 12V-8M0 6H-12M0 6 19 12M0-6-14-9M0-6 12-6M0 12-11 13"
-        fill="none"
-        stroke="#f4eacb"
+      <circle
+        r={map.radius}
+        fill={mapId === "krakatau" ? "#bad090" : "#b6e0d9"}
+        stroke="#f2dca9"
         strokeWidth="2"
       />
-      {ZONES.map((zone, i) => (
-        <g key={zone.name}>
-          <rect
-            x={zone.position[0] - 2}
-            y={zone.position[1] - 2}
-            width="4"
-            height="4"
-            rx="1"
-            fill={zone.color}
-          />
+      {map.areas.map((a, i) => (
+        <g key={a.id}>
+          {mapId === "raja-ampat" && a.id !== "ra-reef" && (
+            <ellipse
+              cx={a.position[0]}
+              cy={a.position[1]}
+              rx={a.radius}
+              ry={a.radius * 0.8}
+              fill="#c2d497"
+              stroke="#eddeb5"
+              strokeWidth="1.5"
+            />
+          )}
           {large && (
             <text
-              x={zone.position[0]}
-              y={zone.position[1] + 5}
+              x={a.position[0]}
+              y={a.position[1] + 4}
               textAnchor="middle"
-              fontSize="3"
-              fontWeight="700"
-              fill="#284d40"
+              fontSize="3.6"
+              fontWeight="800"
+              fill="#345c51"
             >
               {i + 1}
             </text>
           )}
         </g>
       ))}
-      <circle
-        cx={objective.position[0]}
-        cy={objective.position[1]}
-        r="3"
-        fill="#ffe280"
-        stroke="#967235"
-        strokeWidth=".6"
-      />
+      {map.paths.map((p, i) => (
+        <path
+          key={i}
+          d={`M${p.a.join(" ")} L${p.b.join(" ")}`}
+          stroke={p.kind === "glass" ? "#dcf8f2" : "#f2e4c4"}
+          strokeWidth="1.8"
+          fill="none"
+        />
+      ))}
+      {map.landmarks.map((l) => (
+        <rect
+          key={l.id}
+          x={l.position[0] - 1.5}
+          y={l.position[1] - 1.5}
+          width="3"
+          height="3"
+          fill="#778d86"
+        />
+      ))}
+      {map.objects
+        .filter(
+          (o) => o.kind === "npc" || o.kind === "teacher" || o.kind === "guide",
+        )
+        .map((n) => (
+          <path
+            key={n.id}
+            d={`M${n.position[0]} ${n.position[1] - 2}l-1.8 3h3.6Z`}
+            fill="#9c799e"
+            stroke="#fff"
+            strokeWidth=".35"
+          />
+        ))}
+      {objective && (
+        <circle
+          cx={objective.position[0]}
+          cy={objective.position[1]}
+          r="2.7"
+          fill="#ffe280"
+          stroke="#967235"
+          strokeWidth=".6"
+        />
+      )}
       <circle
         cx={position[0]}
         cy={position[1]}
-        r="2"
+        r="1.9"
         fill="#224d43"
         stroke="white"
-        strokeWidth=".9"
+        strokeWidth=".8"
       />
     </svg>
   );

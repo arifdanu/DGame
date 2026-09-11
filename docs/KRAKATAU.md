@@ -1,6 +1,6 @@
 # Laporan implementasi Petualangan Krakatau Pintar
 
-Tanggal: 11 September 2026.
+Tanggal: 11 September 2026. Laporan fase awal sebelum ekspansi; lihat [laporan dua map](EXPANSION.md) untuk implementasi dan pengujian terkini.
 
 ## Hasil
 

@@ -3,7 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { Shape, type Group } from "three";
 import { Avatar } from "../avatars/Avatar";
-import { OBJECTS } from "../data/world";
+import type { MapDefinition } from "../maps/mapTypes";
+import { ExpansionObject } from "./ExpansionObjects";
 import type { Progress, WorldObject } from "../data/types";
 const star = new Shape();
 for (let i = 0; i < 10; i++) {
@@ -14,6 +15,8 @@ for (let i = 0; i < 10; i++) {
 }
 star.closePath();
 export function isObjectVisible(o: WorldObject, p: Progress) {
+  if (o.kind === "quest") return o.keepAfterCollect || !p.items.includes(o.id);
+  if (o.kind === "bonus") return !p.stars.includes(o.id);
   if (o.kind === "item")
     return !p.items.includes(o.id as "rock" | "leaf" | "shell");
   if (o.kind === "star") return !p.stars.includes(o.id);
@@ -24,11 +27,15 @@ function ObjectModel({
   active,
   paused,
   locked,
+  height,
+  collected,
 }: {
   object: WorldObject;
   active: boolean;
   paused: boolean;
   locked: boolean;
+  height: number;
+  collected: boolean;
 }) {
   const spin = useRef<Group>(null),
     { kind, id } = object;
@@ -39,7 +46,15 @@ function ObjectModel({
     }
   });
   return (
-    <group position={[object.position[0], 0, object.position[1]]}>
+    <group position={[object.position[0], height, object.position[1]]}>
+      {["npc", "quest", "board", "info", "bonus"].includes(kind) && (
+        <ExpansionObject
+          object={object}
+          active={active}
+          collected={collected}
+          paused={paused}
+        />
+      )}
       {(kind === "teacher" || kind === "guide") && (
         <group rotation={[0, 0.12, 0]} scale={1.1}>
           <Avatar variant={kind === "guide" ? 2 : 1} paused={paused} />
@@ -178,25 +193,43 @@ export function InteractiveObjects({
   progress,
   nearby,
   paused,
+  map,
+  position,
+  preview,
 }: {
   progress: Progress;
   nearby: string | null;
   paused: boolean;
+  map: MapDefinition;
+  position: [number, number];
+  preview: boolean;
 }) {
   return (
     <>
-      {OBJECTS.filter((o) => isObjectVisible(o, progress)).map((o) => (
-        <ObjectModel
-          key={o.id}
-          object={o}
-          active={nearby === o.id}
-          paused={paused}
-          locked={
-            (o.kind === "lab" && !progress.unlocked.includes("lab")) ||
-            (o.kind === "star" && !progress.completed.includes("letters"))
-          }
-        />
-      ))}
+      {map.objects
+        .filter(
+          (o) =>
+            isObjectVisible(o, progress) &&
+            (preview ||
+              Math.hypot(
+                o.position[0] - position[0],
+                o.position[1] - position[1],
+              ) < 30),
+        )
+        .map((o) => (
+          <ObjectModel
+            key={o.id}
+            object={o}
+            active={nearby === o.id}
+            paused={paused}
+            height={map.ground(...o.position)}
+            collected={progress.items.includes(o.id)}
+            locked={
+              (o.kind === "lab" && !progress.unlocked.includes("lab")) ||
+              (o.kind === "star" && !progress.completed.includes("letters"))
+            }
+          />
+        ))}
     </>
   );
 }

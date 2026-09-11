@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-const SAVE_KEY = "krakatau-pintar:v1";
+const SAVE_KEY = "krakatau-pintar:v2";
 async function pos(page: Page) {
   return page
     .locator(".minimap-button svg circle")
@@ -47,6 +47,9 @@ async function begin(
   await page.getByRole("button", { name: avatar, exact: true }).click();
   await page
     .getByRole("button", { name: "Mulai Petualangan", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Masuk Map Krakatau Pintar", exact: true })
     .click();
   await expect(page.locator('.playing[data-ready="true"]')).toBeVisible();
 }
@@ -143,16 +146,16 @@ test("Dinar completes all four missions by walking, earns rewards and resumes sa
     .getByRole("button", { name: "Buku petualangan", exact: true })
     .click();
   await expect(
-    page.getByText("Dinar · 4/4 misi selesai · 28 bintang"),
+    page.getByText("Dinar · 4/7 misi selesai · 28 bintang"),
   ).toBeVisible();
   await page.getByRole("button", { name: "Tutup", exact: true }).click();
   const save = await page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)!),
     SAVE_KEY,
   );
-  expect(save.profiles.dinar.badges).toHaveLength(4);
-  expect(save.profiles.dinar.unlocked).toContain("lab");
-  expect(save.profiles.delisha.points).toBe(0);
+  expect(save.profiles.dinar.maps.krakatau.badges).toHaveLength(4);
+  expect(save.profiles.dinar.maps.krakatau.unlocked).toContain("lab");
+  expect(save.profiles.delisha.maps.krakatau.points).toBe(0);
   await page.reload();
   await page.getByRole("button", { name: "Lanjutkan sebagai Dinar" }).click();
   await expect(page.getByTestId("star-total")).toHaveText("28");
@@ -207,6 +210,9 @@ test("touch landscape profile, avatar, movement, jump, camera and pause are usab
   await page
     .getByRole("button", { name: "Mulai Petualangan", exact: true })
     .click();
+  await page
+    .getByRole("button", { name: "Masuk Map Krakatau Pintar", exact: true })
+    .click();
   await expect(page.getByTestId("star-total")).toHaveText("0");
   const saved = await page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)!),
@@ -222,15 +228,15 @@ test("Delisha matching quiz can be resumed and reset only changes the selected p
   await begin(page, "Delisha", "Anak perempuan peneliti");
   await page.evaluate((key) => {
     const d = JSON.parse(localStorage.getItem(key)!);
-    d.profiles.delisha = {
-      ...d.profiles.delisha,
+    d.profiles.delisha.maps.krakatau = {
+      ...d.profiles.delisha.maps.krakatau,
       completed: ["welcome", "science"],
       items: ["rock", "leaf", "shell"],
       badges: ["Sahabat Guru", "Peneliti Alam"],
       unlocked: ["village", "beach", "forest", "garden", "lab"],
       points: 13,
     };
-    d.profiles.dinar.points = 2;
+    d.profiles.dinar.maps.krakatau.points = 2;
     localStorage.setItem(key, JSON.stringify(d));
   }, SAVE_KEY);
   await page.reload();
@@ -258,8 +264,8 @@ test("Delisha matching quiz can be resumed and reset only changes the selected p
     (key) => JSON.parse(localStorage.getItem(key)!),
     SAVE_KEY,
   );
-  expect(saved.profiles.delisha.points).toBe(0);
-  expect(saved.profiles.dinar.points).toBe(2);
+  expect(saved.profiles.delisha.maps.krakatau.points).toBe(0);
+  expect(saved.profiles.dinar.maps.krakatau.points).toBe(2);
 });
 
 test("home controls, portrait layout, mute persistence and damaged saves", async ({

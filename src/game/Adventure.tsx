@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
-  Award,
   BookOpen,
-  Check,
   Compass,
   Flag,
   Heart,
@@ -25,13 +23,7 @@ import type { Dialogue } from "./ui/Modal";
 import { QuizModal } from "./ui/QuizModal";
 import { Controls as GameControls } from "./ui/Controls";
 import { IslandMap } from "./ui/Map";
-import {
-  OBJECTS,
-  PROFILES,
-  INTERACTION_RADIUS,
-  SPAWN,
-  ZONES,
-} from "./data/world";
+import { PROFILES, INTERACTION_RADIUS, SPAWN, ZONES } from "./data/world";
 import type {
   Controls,
   ItemId,
@@ -39,27 +31,46 @@ import type {
   QuizId,
   ProfileId,
   WorldObject,
+  MapId,
 } from "./data/types";
-import { useSave, updateSave, updateProgress } from "./utils/storage";
 import {
-  activeMission,
+  useSave,
+  updateSave,
+  updateProgress,
+  updatePlayer,
+  freshPlayer,
+} from "./utils/storage";
+import {
+  scienceItems,
+  countStars,
   applyProgress,
   BADGES,
-  freshProgress,
 } from "./missions/progress";
 import { getQuiz } from "./data/quizzes";
 import { isObjectVisible } from "./world/InteractiveObjects";
 import { muteAudio, sound } from "./utils/audio";
+import { MAPS, mapUnlocked } from "./maps/mapRegistry";
+import { MapSelector } from "./ui/MapSelector";
+import { MissionBoard } from "./ui/MissionBoard";
+import { NPCMissionDialog } from "./npcs/NPCMissionDialog";
+import { MISSION_BY_ID } from "./missions/missionRegistry";
+import {
+  currentObjective,
+  executeMissionCommand,
+  missionStatus,
+  objectiveCount,
+} from "./missions/MissionManager";
 import "./game.css";
-type Screen = "home" | "profiles" | "avatars" | "game";
+type Screen = "home" | "profiles" | "avatars" | "maps" | "game";
 type Panel = "pause" | "settings" | "help" | "map" | "journal" | "reset" | null;
 export default function Adventure() {
   const { data, warning, blocked } = useSave();
   const [ready, setReady] = useState(false);
+  const [npcId, setNpcId] = useState<string | null>(null);
   const [screen, setScreen] = useState<Screen>("home"),
     [panel, setPanel] = useState<Panel>(null),
     [dialogue, setDialogue] = useState<Dialogue | null>(null),
-    [quiz, setQuiz] = useState<QuizId | null>(null),
+    [quiz, setQuiz] = useState<string | null>(null),
     [toast, setToast] = useState(""),
     [position, setPosition] = useState<Point>(SPAWN);
   const input = useRef<Controls>({
@@ -70,9 +81,12 @@ export default function Adventure() {
     resetCamera: false,
   });
   const profile = data.active || "dinar",
-    p = data.profiles[profile],
-    mission = activeMission(p);
-  const paused = !!panel || !!dialogue || !!quiz || blocked,
+    player = data.profiles[profile],
+    mapId = player.lastMap,
+    map = MAPS[mapId],
+    p = player.maps[mapId],
+    mission = currentObjective(p, mapId);
+  const paused = !!panel || !!dialogue || !!quiz || !!npcId || blocked,
     preview = screen !== "game";
   const onPosition = useCallback((next: Point) => {
     setPosition(next);
@@ -80,7 +94,8 @@ export default function Adventure() {
   }, []);
   const nearby: WorldObject | null =
     screen === "game"
-      ? OBJECTS.filter((o) => isObjectVisible(o, p))
+      ? map.objects
+          .filter((o) => isObjectVisible(o, p))
           .map((o) => ({
             o,
             d: Math.hypot(
@@ -91,7 +106,7 @@ export default function Adventure() {
           .filter((o) => o.d < INTERACTION_RADIUS)
           .sort((a, b) => a.d - b.d)[0]?.o || null
       : null;
-  const objective = OBJECTS.find((o) => o.id === mission.target)!;
+  const objective = map.objects.find((o) => o.id === mission.target)!;
   const distance = Math.round(
     Math.hypot(
       objective.position[0] - position[0],
@@ -129,6 +144,7 @@ export default function Adventure() {
   }
   function go(next: Screen) {
     setQuiz(null);
+    setNpcId(null);
     setDialogue(null);
     setPanel(null);
     setScreen(next);
@@ -138,11 +154,42 @@ export default function Adventure() {
     updateSave((d) => ({ ...d, active: id }));
     go("avatars");
   }
-  function start() {
+  function start(selectedMap: MapId = player.lastMap) {
+    if (!mapUnlocked(selectedMap, player)) {
+      go("maps");
+      return;
+    }
     setReady(false);
-    updateProgress(profile, (v) => applyProgress(v, { type: "start" }));
-    setPosition(SPAWN);
+    input.current = { x: 0, z: 0, jump: false, orbit: 0, resetCamera: false };
+    updatePlayer(profile, (v) => ({
+      ...v,
+      started: true,
+      lastMap: selectedMap,
+      maps: {
+        ...v.maps,
+        [selectedMap]: applyProgress(v.maps[selectedMap], { type: "start" }),
+      },
+    }));
+    setPosition(MAPS[selectedMap].spawn);
     go("game");
+  }
+  function track(id: string | null) {
+    updateProgress(profile, (v) => ({ ...v, trackedMission: id }));
+    setNpcId(null);
+    setPanel(null);
+  }
+  function accept(id: string) {
+    updateProgress(profile, (v) =>
+      executeMissionCommand(
+        v,
+        { type: "accept", missionId: id },
+        mapId,
+        profile,
+      ),
+    );
+    setNpcId(null);
+    sound("click");
+    notify("Misi dimulai! Ikuti penanda pada peta.");
   }
   function info(name: string, pages: string[]) {
     setDialogue({ name, pages });
@@ -159,6 +206,65 @@ export default function Adventure() {
       return;
     sound("click");
     switch (nearby.kind) {
+      case "npc":
+        setNpcId(nearby.id);
+        break;
+      case "board":
+        setPanel("journal");
+        break;
+      case "info":
+        info(nearby.name, [
+          nearby.description || "Buka peta untuk melihat area di sekitarmu.",
+        ]);
+        break;
+      case "bonus":
+        updateProgress(profile, (v) =>
+          executeMissionCommand(
+            v,
+            { type: "interact", objectId: nearby.id },
+            mapId,
+            profile,
+          ),
+        );
+        sound("collect");
+        notify("Bintang penjelajah ditemukan! +1 bintang");
+        break;
+      case "quest": {
+        const m = MISSION_BY_ID[nearby.missionId!];
+        const status = missionStatus(m, p);
+        if (p.items.includes(nearby.id)) {
+          info(nearby.name, [
+            nearby.visual === "plant"
+              ? "Bibit sudah ditanam. Mari rawat agar tumbuh!"
+              : nearby.description || "Sudah dicatat di buku penemuanmu.",
+          ]);
+          break;
+        }
+        if (status !== "active") {
+          info(nearby.name, [
+            status === "locked"
+              ? "Selesaikan misi sebelumnya dahulu. Lihat papan misi untuk petunjuk."
+              : `Temui ${map.objects.find((o) => o.id === m.npcId)?.name} untuk menerima misi ${m.title}.`,
+          ]);
+          break;
+        }
+        updateProgress(profile, (v) =>
+          executeMissionCommand(
+            v,
+            { type: "interact", objectId: nearby.id },
+            mapId,
+            profile,
+          ),
+        );
+        sound("collect");
+        notify(
+          `${nearby.visual === "plant" ? "Bibit ditanam" : nearby.name + " dicatat"}! +1 bintang`,
+        );
+        if (objectiveCount(m, p) + 1 === m.objectives.length)
+          notify("Penemuan lengkap! Kembali ke guru untuk kuis dan hadiah.");
+        if (nearby.description) info(nearby.name, [nearby.description]);
+        break;
+      }
       case "guide":
         info("Pak Guru Alam", [
           "Halo, peneliti kecil! Gunung Krakatau ada di seberang laut. Kita mengamatinya dari pulau ini agar tetap aman.",
@@ -182,13 +288,16 @@ export default function Adventure() {
               notify("Misi pertama selesai! +5 bintang · Sahabat Guru");
             },
           });
-        else if (p.items.length === 3 && !p.completed.includes("science"))
+        else if (
+          scienceItems(p).length === 3 &&
+          !p.completed.includes("science")
+        )
           setQuiz("science");
         else
           info("Bu Guru Sains", [
             p.completed.includes("science")
               ? "Kamu peneliti yang hebat! Teruskan petualanganmu ke hutan dan taman bintang. Meja eksperimen juga sudah terbuka."
-              : `Ayo cari batu, daun, dan kerang di pantai. Kamu sudah menemukan ${p.items.length} dari 3 benda.`,
+              : `Ayo cari batu, daun, dan kerang di pantai. Kamu sudah menemukan ${scienceItems(p).length} dari 3 benda.`,
           ]);
         break;
       case "item":
@@ -203,7 +312,7 @@ export default function Adventure() {
         );
         sound("collect");
         notify(`${nearby.name} ditemukan! +1 bintang`);
-        if (p.items.length === 2) setQuiz("science");
+        if (scienceItems(p).length === 2) setQuiz("science");
         break;
       case "letters":
         if (!p.completed.includes("science"))
@@ -228,17 +337,17 @@ export default function Adventure() {
         );
         sound("collect");
         notify("Satu bintang ditemukan! +1 bintang");
-        if (p.stars.length === 4) setQuiz("count");
+        if (countStars(p).length === 4) setQuiz("count");
         break;
       case "count":
-        if (p.stars.length === 5 && !p.completed.includes("count"))
+        if (countStars(p).length === 5 && !p.completed.includes("count"))
           setQuiz("count");
         else
           info("Taman Hitung Bintang", [
             p.completed.includes("count")
               ? "Lima bintang sudah terkumpul. Hebat! Kamu boleh menjelajahi pulau atau berlatih di Pusat Sains."
               : p.completed.includes("letters")
-                ? `Kumpulkan lima bintang di sekitar taman. Sudah ditemukan: ${p.stars.length}/5.`
+                ? `Kumpulkan lima bintang di sekitar taman. Sudah ditemukan: ${countStars(p).length}/5.`
                 : "Mulai dari Bu Guru Sains, lalu Hutan Huruf. Setelah itu, ayo berhitung di taman!",
           ]);
         break;
@@ -282,16 +391,33 @@ export default function Adventure() {
   });
   function finishQuiz() {
     if (!quiz) return;
+    if (MISSION_BY_ID[quiz]) {
+      const m = MISSION_BY_ID[quiz];
+      updateProgress(profile, (v) =>
+        executeMissionCommand(
+          v,
+          { type: "answer", missionId: quiz, answer: m.quiz[profile].answer },
+          mapId,
+          profile,
+        ),
+      );
+      notify(`Misi selesai! +${m.reward.stars} bintang · ${m.reward.badge}`);
+      sound("win");
+      setQuiz(null);
+      return;
+    }
     updateProgress(profile, (v) =>
       applyProgress(
         v,
-        quiz === "lab" ? { type: "lab" } : { type: "complete", id: quiz },
+        quiz === "lab"
+          ? { type: "lab" }
+          : { type: "complete", id: quiz as Exclude<QuizId, "lab"> },
       ),
     );
     notify(
       quiz === "lab"
         ? "Penemuan baru! +2 bintang"
-        : `Misi selesai! +5 bintang · ${BADGES[quiz]}`,
+        : `Misi selesai! +5 bintang · ${BADGES[quiz as Exclude<QuizId, "lab">]}`,
     );
     sound("win");
     setQuiz(null);
@@ -300,14 +426,17 @@ export default function Adventure() {
     <div
       className={`krakatau-app ${screen === "game" ? "playing" : ""}`}
       data-ready={ready}
+      data-map={mapId}
     >
       {(screen === "home" || screen === "game") && (
         <div className={`world-container ${preview ? "preview-world" : ""}`}>
           <World
-            key={`${preview ? "preview" : "play"}-${profile}`}
+            key={`${preview ? "preview" : "play"}-${profile}-${mapId}`}
+            mapId={mapId}
+            position={position}
             preview={preview}
             paused={paused}
-            progress={p}
+            progress={{ ...p, avatar: player.avatar }}
             input={input}
             nearby={nearby?.id || null}
             onPosition={onPosition}
@@ -318,7 +447,7 @@ export default function Adventure() {
         <HomeScreen
           data={data}
           start={() => go("profiles")}
-          resume={start}
+          resume={() => start()}
           settings={() => setPanel("settings")}
           help={() => setPanel("help")}
           mute={mute}
@@ -345,21 +474,27 @@ export default function Adventure() {
       )}
       {screen === "avatars" && (
         <AvatarScreen
-          avatar={p.avatar}
+          avatar={player.avatar}
           select={(avatar) => {
-            updateProgress(profile, (v) => ({ ...v, avatar }));
+            updatePlayer(profile, (v) => ({ ...v, avatar }));
             sound("click");
           }}
           name={PROFILES[profile].name}
-          start={start}
+          start={() => go("maps")}
           back={() => go("profiles")}
         />
+      )}
+      {screen === "maps" && (
+        <MapSelector player={player} enter={start} back={() => go("avatars")} />
       )}
       {screen === "game" && (
         <>
           <div className="hud-top">
             <div className="hud-player">
               <Brand />
+              <span className="hud-map-name">
+                {map.name} · {p.badges.length} lencana
+              </span>
               <div className="player-stats">
                 <span className="hearts" aria-label="Tiga energi penuh">
                   {[0, 1, 2].map((i) => (
@@ -380,7 +515,9 @@ export default function Adventure() {
                 <Flag size={22} />
               </span>
               <span>
-                <small>MISI {mission.index} DARI 4</small>
+                <small>
+                  MISI {mission.index} DARI {mission.total}
+                </small>
                 <strong>{mission.title}</strong>
                 <span>{mission.hint}</span>
               </span>
@@ -392,7 +529,11 @@ export default function Adventure() {
                 aria-label="Buka peta pulau"
                 onClick={() => setPanel("map")}
               >
-                <IslandMap position={position} target={mission.target} />
+                <IslandMap
+                  mapId={mapId}
+                  position={position}
+                  target={mission.target}
+                />
               </button>
               <div>
                 <button
@@ -420,7 +561,7 @@ export default function Adventure() {
           <div className="location-tag">
             <Compass size={15} />
             {
-              ZONES.reduce(
+              map.areas.reduce(
                 (closest, z) =>
                   Math.hypot(
                     z.position[0] - position[0],
@@ -432,7 +573,7 @@ export default function Adventure() {
                   )
                     ? z
                     : closest,
-                ZONES[0],
+                map.areas[0],
               ).name
             }
           </div>
@@ -441,7 +582,7 @@ export default function Adventure() {
               <kbd>E</kbd>
               <span>
                 <small>{nearby.name}</small>
-                {nearby.kind === "item" || nearby.kind === "star"
+                {["item", "star", "bonus", "quest"].includes(nearby.kind)
                   ? "Ambil penemuan"
                   : nearby.kind === "teacher"
                     ? "Ayo bicara"
@@ -485,10 +626,27 @@ export default function Adventure() {
       {dialogue && (
         <DialogPanel dialogue={dialogue} onClose={() => setDialogue(null)} />
       )}
+      {npcId && (
+        <NPCMissionDialog
+          npc={map.objects.find((o) => o.id === npcId)!}
+          progress={p}
+          mapId={mapId}
+          accept={accept}
+          quiz={(id) => {
+            setNpcId(null);
+            setQuiz(id);
+          }}
+          track={track}
+          close={() => setNpcId(null)}
+        />
+      )}
       {quiz && (
         <QuizModal
           key={`${profile}-${quiz}-${p.labRound}`}
-          quiz={getQuiz(profile, quiz, p.labRound)}
+          quiz={
+            MISSION_BY_ID[quiz]?.quiz[profile] ||
+            getQuiz(profile, quiz as QuizId, p.labRound)
+          }
           onComplete={finishQuiz}
           onClose={() => setQuiz(null)}
         />
@@ -504,6 +662,10 @@ export default function Adventure() {
             <button className="k-button" onClick={mute}>
               {data.muted ? <VolumeX size={19} /> : <Volume2 size={19} />}Suara:{" "}
               {data.muted ? "mati" : "nyala"}
+            </button>
+            <button className="k-button" onClick={() => go("maps")}>
+              <MapIcon size={19} />
+              Ganti map
             </button>
             <button className="k-button" onClick={() => go("profiles")}>
               <Users size={19} />
@@ -555,9 +717,9 @@ export default function Adventure() {
           onClose={() => setPanel(screen === "game" ? "pause" : "settings")}
         >
           <p>
-            Semua bintang, lencana, dan misi 3D {PROFILES[profile].name} akan
-            direset. Progres anak yang lain dan latihan Pulau Pintar tetap
-            tersimpan.
+            Bintang, lencana, dan misi {PROFILES[profile].name} di {map.name}{" "}
+            akan direset. Progres map lain, profil lain, dan latihan Pulau
+            Pintar tetap tersimpan.
           </p>
           <div className="menu-buttons">
             <button
@@ -569,7 +731,7 @@ export default function Adventure() {
             <button
               className="k-button reset-confirm"
               onClick={() => {
-                updateProgress(profile, () => freshProgress());
+                updateProgress(profile, () => freshPlayer().maps[mapId]);
                 go("avatars");
               }}
             >
@@ -621,7 +783,12 @@ export default function Adventure() {
           className="map-modal"
           onClose={() => setPanel(null)}
         >
-          <IslandMap large position={position} target={mission.target} />
+          <IslandMap
+            mapId={mapId}
+            large
+            position={position}
+            target={mission.target}
+          />
           <div className="map-legend">
             <span>● Posisimu</span>
             <span>
@@ -629,7 +796,7 @@ export default function Adventure() {
             </span>
           </div>
           <div className="map-zones">
-            {ZONES.map((z, i) => (
+            {map.areas.map((z, i) => (
               <div key={z.name}>
                 <b>{i + 1}</b>
                 <span>
@@ -640,67 +807,20 @@ export default function Adventure() {
             ))}
           </div>
           <p className="small-note">
-            Krakatau ada di utara, di seberang laut. Kita menikmatinya dari
-            pulau yang aman.
+            {mapId === "krakatau"
+              ? "Krakatau ada di utara, di seberang laut. Nikmati dari jalur aman."
+              : "Ikuti jalur kayu dan kaca di laguna dangkal. Pelampung putih menandai batas dunia."}{" "}
+            Segitiga: guru. Kotak: landmark.
           </p>
         </Modal>
       )}
       {panel === "journal" && (
         <Modal title="Buku petualangan" onClose={() => setPanel(null)}>
           <p>
-            {PROFILES[profile].name} · {p.completed.length}/4 misi selesai ·{" "}
-            {p.points} bintang
+            {PROFILES[profile].name} · {p.completed.length}/
+            {map.missionIds.length} misi selesai · {p.points} bintang
           </p>
-          <div className="mission-list">
-            {(["welcome", "science", "letters", "count"] as const).map(
-              (id, i) => (
-                <div
-                  key={id}
-                  className={p.completed.includes(id) ? "done" : ""}
-                >
-                  <span>
-                    {p.completed.includes(id) ? <Check size={20} /> : i + 1}
-                  </span>
-                  <div>
-                    <strong>
-                      {
-                        [
-                          "Temui Bu Guru Sains",
-                          "Temukan 3 Benda Sains",
-                          "Hutan Huruf",
-                          "Hitung Bintang",
-                        ][i]
-                      }
-                    </strong>
-                    <small>
-                      {p.completed.includes(id)
-                        ? "Selesai · " + BADGES[id]
-                        : mission.index === i + 1
-                          ? mission.hint
-                          : "Menunggu misi sebelumnya"}
-                    </small>
-                  </div>
-                </div>
-              ),
-            )}
-          </div>
-          <div className="badge-list">
-            {p.badges.length ? (
-              p.badges.map((b) => (
-                <span key={b}>
-                  <Award size={20} />
-                  {b}
-                </span>
-              ))
-            ) : (
-              <p>Lencana pertama menunggumu bersama Bu Guru.</p>
-            )}
-          </div>
-          {p.unlocked.includes("lab") && (
-            <p className="unlock-note">
-              <Check size={18} /> Klub Peneliti Kecil sudah terbuka!
-            </p>
-          )}
+          <MissionBoard mapId={mapId} progress={p} track={track} />
           <button
             className="k-button primary"
             onClick={() => {

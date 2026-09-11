@@ -48,9 +48,9 @@ describe("Krakatau mission rules", () => {
     expect(p.completed).toHaveLength(4);
     expect(activeMission(p).target).toBe("lab");
     const save = initialSave();
-    save.profiles.dinar = p;
+    save.profiles.dinar.maps.krakatau = p;
     expect(validSave(JSON.parse(JSON.stringify(save)))).toBe(true);
-    expect(save.profiles.delisha.points).toBe(0);
+    expect(save.profiles.delisha.maps.krakatau.points).toBe(0);
   });
   it("keeps an unfinished science quiz recoverable after refresh", () => {
     const p = JSON.parse(JSON.stringify(scienceReady()));
@@ -86,7 +86,16 @@ describe("age-adjusted learning and save validation", () => {
         ...s,
         profiles: {
           ...s.profiles,
-          dinar: { ...s.profiles.dinar, items: ["rock", "rock"] },
+          dinar: {
+            ...s.profiles.dinar,
+            maps: {
+              ...s.profiles.dinar.maps,
+              krakatau: {
+                ...s.profiles.dinar.maps.krakatau,
+                items: ["rock", "rock"],
+              },
+            },
+          },
         },
       }),
     ).toBe(false);
@@ -95,7 +104,16 @@ describe("age-adjusted learning and save validation", () => {
         ...s,
         profiles: {
           ...s.profiles,
-          dinar: { ...s.profiles.dinar, completed: ["count"] },
+          dinar: {
+            ...s.profiles.dinar,
+            maps: {
+              ...s.profiles.dinar.maps,
+              krakatau: {
+                ...s.profiles.dinar.maps.krakatau,
+                completed: ["count"],
+              },
+            },
+          },
         },
       }),
     ).toBe(false);

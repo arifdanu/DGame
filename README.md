@@ -1,6 +1,6 @@
 # Petualangan Krakatau Pintar
 
-Game edukasi sandbox 3D berbahasa Indonesia untuk **Dinar (7 tahun, kelas 2 SD)** dan **Delisha (5 tahun, persiapan SD)**. Jelajahi pulau, temui guru, kumpulkan benda alam, bermain huruf, dan hitung bintang. Dunia dan tiga avatar dibuat secara procedural dengan geometry low-poly; tanpa backend, login, chat, iklan, pembelian, atau aset karakter game lain.
+Game edukasi sandbox 3D berbahasa Indonesia untuk **Dinar (7 tahun, kelas 2 SD)** dan **Delisha (5 tahun, persiapan SD)**. Jelajahi **Krakatau Pintar** dan **Laut Raja Ampat Pintar**: 15 area, 16 misi, dan cakupan dunia sekitar 4× versi awal. Temui guru, kumpulkan benda alam, bermain huruf, dan hitung bintang. Dunia dan tiga avatar dibuat secara procedural dengan geometry low-poly; tanpa backend, login, chat, iklan, pembelian, atau aset karakter game lain.
 
 Mode lama **Petualangan Pulau Pintar** tetap tersedia di `/classic/`: 24 level, 120 aktivitas, panel orang tua dengan PIN, batas waktu, TTS, dan progres lama tidak dihapus. [Panduan mode latihan lama](docs/CLASSIC.md). Semua rute dalam panduan lama kini memakai awalan `/classic`; bookmark `/map`, `/play/...`, `/parent`, `/session`, dan `/rest` dialihkan otomatis.
 
@@ -48,7 +48,13 @@ React dipatok pada seri **19.2.x** karena peer dependency React Three Fiber yang
 
 Pada perangkat touch: joystick kiri bawah untuk berjalan, **Lompat** dan **Ambil / bicara** di kanan, serta tombol kamera. Joystick tidak tampil pada desktop dengan pointer presisi. Beralih tab otomatis menjeda permainan. Dialog, peta, kuis, dan menu juga menghentikan simulasi.
 
-## Dunia dan misi
+## Ekspansi dua map
+
+Setelah memilih avatar, pilih map. Raja Ampat terbuka sesudah misi awal Krakatau pada profil tersebut. Gunakan **Pause → Ganti map** untuk berpindah; bintang, badge, dan progres tetap terpisah. Krakatau mendapat Bukit Observasi, Teluk Konservasi, dan Jalur Gunung. Raja Ampat memiliki tujuh area serta sembilan misi laut, mangrove, burung, dan kristal.
+
+Rincian area/misi, arsitektur, migrasi, pengujian dan batasan terbaru tersedia di [laporan ekspansi](docs/EXPANSION.md).
+
+## Dunia dan misi awal Krakatau
 
 - **Desa Belajar:** rumah sederhana, petunjuk arah, jalan, dan Bu Guru Sains di jalan utama.
 - **Pantai Sains:** pasir, laut, pohon palem, dermaga, perahu, batu, daun, dan kerang.
@@ -70,9 +76,9 @@ Meja eksperimen menawarkan latihan bergilir: warna, bentuk, hewan, penjumlahan, 
 
 ## Progres dan privasi
 
-- Data 3D disimpan pada localStorage **`krakatau-pintar:v1`**, versi 1.
+- Data 3D disimpan pada localStorage **`krakatau-pintar:v2`**, versi 2. Save v1 dimigrasikan otomatis ke map Krakatau per anak; key v1 tetap utuh sebagai cadangan.
 - Menyimpan profil aktif, avatar, misi selesai, benda koleksi, bintang koleksi, jumlah hadiah, lencana, area terbuka, putaran latihan tambahan, dan mute.
-- Progres Dinar dan Delisha dipisahkan. Reset meminta konfirmasi dan hanya menghapus progres 3D profil yang dipilih.
+- Progres Dinar dan Delisha dipisahkan. Reset meminta konfirmasi dan hanya menghapus progres map yang dipilih untuk profil tersebut. Map lain tetap disimpan.
 - Data mode lama pada **`pulau-pintar:v1`** tetap terpisah dan tidak dimigrasikan atau dihapus.
 - Tidak ada kiriman profil ke server, analytics, mikrofon, kamera, atau layanan pihak ketiga.
 - Penyimpanan gagal memunculkan peringatan. Data rusak atau versi asing diblokir dan nilai aslinya tidak ditimpa. Untuk pemulihan: salin key tersebut melalui DevTools sebagai cadangan, perbaiki/pulihkan salinan valid, lalu reload. Jangan unggah data keluarga ke repository. Menghapus data situs juga akan menghapus progres.
@@ -89,7 +95,10 @@ src/game/Adventure.tsx          Alur layar, interaksi, dan HUD
 src/game/avatars/Avatar.tsx      Tiga avatar, idle/jalan/lompat
 src/game/world/                  Terrain, bangunan, gunung, instancing pohon, benda interaktif
 src/game/player/                 Kontrol keyboard/drag, kamera, gravitasi dan collision
-src/game/missions/progress.ts    State misi, syarat unlock, reward idempotent
+src/game/maps/                   Registry dan konfigurasi/renderer kedua map
+src/game/missions/               Aturan lama, registry misi ekspansi, command reducer
+src/game/npcs/                   Dialog misi NPC
+src/game/storage/                Validator save lama untuk migrasi
 src/game/data/                   Profil, avatar, koordinat dunia, bank kuis, tipe
 src/game/ui/                     Home/Profile/AvatarScreen, dialog, kuis, peta, touch controls
 src/game/utils/                  Validasi localStorage dan suara Web Audio
@@ -97,7 +106,7 @@ src/game/game.css                UI responsif, layout landscape, reduced motion 
 src/pages/, content/, engine/    Seluruh fitur latihan lama dipertahankan
 ```
 
-Untuk menambah misi, tambahkan ID/tipe, data kuis per profil, objek dunia, aturan transisi pada `progress.ts`, dan interaksi. Jangan mengubah ID benda yang sudah tersimpan tanpa migrasi skema. Objek solid dan kamera memakai proxy collision yang sama di `data/world.ts`. Tambahkan pengujian syarat unlock dan hadiah bila aturan berubah.
+Untuk menambah misi ekspansi, tambahkan definisi di `missionRegistry.ts` dan objek/NPC pada konfigurasi map. `MissionManager.ts` menangani prasyarat, objective dan hadiah generik. Jangan mengubah ID benda yang sudah tersimpan tanpa migrasi skema. Objek solid dan kamera memakai proxy collision yang sama pada konfigurasi map; `data/world.ts` mempertahankan dunia awal. Tambahkan pengujian syarat unlock dan hadiah bila aturan berubah.
 
 ## Validasi
 
@@ -116,7 +125,7 @@ npx playwright install chromium
 PLAYWRIGHT_CHANNEL=chromium npm run test:e2e
 ```
 
-Tes browser menggunakan konteks baru dan data sintetis, tidak menyentuh progres keluarga. Suite baru menjalankan perjalanan Dinar melalui gerakan keyboard nyata, semua misi dan hadiah, jawaban salah/coba lagi, reload, pemisahan profil, pencocokan huruf Delisha, reset selektif, serta joystick di viewport landscape. Tes unit memeriksa syarat misi, hadiah ganda, data rusak, collision, dan jarak aman kamera. Hasil aktual dan screenshot dicatat di [laporan 3D](docs/KRAKATAU.md).
+Tes browser menggunakan konteks baru dan data sintetis, tidak menyentuh progres keluarga. Suite baru menjalankan perjalanan Dinar melalui gerakan keyboard nyata, semua misi dan hadiah, jawaban salah/coba lagi, reload, pemisahan profil, pencocokan huruf Delisha, reset selektif, serta joystick di viewport landscape. Tes unit memeriksa syarat misi, hadiah ganda, data rusak, collision, dan jarak aman kamera. Hasil ekspansi dan screenshot dicatat di [laporan ekspansi](docs/EXPANSION.md); [laporan 3D awal](docs/KRAKATAU.md) dipertahankan sebagai riwayat.
 
 ## Batasan MVP dan fase berikutnya
 

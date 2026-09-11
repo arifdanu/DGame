@@ -1,11 +1,22 @@
 import { OBSTACLES, WORLD_RADIUS } from "../data/world";
-export function canStand(x: number, z: number, feet: number) {
+import type { PhysicsWorld } from "../maps/mapTypes";
+const DEFAULT_WORLD: PhysicsWorld = {
+  radius: WORLD_RADIUS,
+  obstacles: OBSTACLES,
+  ground: () => 0,
+};
+export function canStand(
+  x: number,
+  z: number,
+  feet: number,
+  world: PhysicsWorld = DEFAULT_WORLD,
+) {
   return (
-    Math.hypot(x, z) <= WORLD_RADIUS &&
-    !OBSTACLES.some(
+    Math.hypot(x, z) <= world.radius &&
+    !world.obstacles.some(
       (o) =>
         Math.hypot(x - o.position[0], z - o.position[1]) < o.radius + 0.36 &&
-        feet < o.height,
+        feet < o.height + world.ground(...o.position),
     )
   );
 }
@@ -15,15 +26,21 @@ export function moveWithCollision(
   dx: number,
   dz: number,
   feet: number,
+  world: PhysicsWorld = DEFAULT_WORLD,
 ) {
   // Axis separation permits sliding along walls without walking through them.
-  const nx = canStand(x + dx, z, feet) ? x + dx : x;
-  const nz = canStand(nx, z + dz, feet) ? z + dz : z;
+  const nx = canStand(x + dx, z, feet, world) ? x + dx : x;
+  const nz = canStand(nx, z + dz, feet, world) ? z + dz : z;
   return [nx, nz] as const;
 }
-export function groundHeight(x: number, z: number, previousFeet: number) {
-  let ground = 0;
-  for (const o of OBSTACLES)
+export function groundHeight(
+  x: number,
+  z: number,
+  previousFeet: number,
+  world: PhysicsWorld = DEFAULT_WORLD,
+) {
+  let ground = world.ground(x, z);
+  for (const o of world.obstacles)
     if (
       o.height < 1.5 &&
       previousFeet >= o.height &&
@@ -35,6 +52,7 @@ export function groundHeight(x: number, z: number, previousFeet: number) {
 export function safeCamera(
   target: { x: number; y: number; z: number },
   desired: { x: number; y: number; z: number },
+  world: PhysicsWorld = DEFAULT_WORLD,
 ) {
   // Sample the sight line against the same solid proxies as player collision.
   for (let step = 1; step <= 32; step++) {
@@ -43,9 +61,10 @@ export function safeCamera(
       y = target.y + (desired.y - target.y) * t,
       z = target.z + (desired.z - target.z) * t;
     if (
-      OBSTACLES.some(
+      y < world.ground(x, z) + 0.25 ||
+      world.obstacles.some(
         (o) =>
-          y < o.height + 0.25 &&
+          y < o.height + world.ground(...o.position) + 0.25 &&
           Math.hypot(x - o.position[0], z - o.position[1]) < o.radius + 0.25,
       )
     ) {

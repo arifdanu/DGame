@@ -2,17 +2,19 @@ import { useEffect, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Group, Vector3 } from "three";
 import { Avatar } from "../avatars/Avatar";
-import { SPAWN } from "../data/world";
+import type { MapDefinition } from "../maps/mapTypes";
 import type { AvatarId, Controls, Point } from "../data/types";
 import { groundHeight, moveWithCollision, safeCamera } from "./physics";
 import { sound } from "../utils/audio";
 export function Player({
   variant,
+  map,
   paused,
   input,
   onPosition,
 }: {
   variant: AvatarId;
+  map: MapDefinition;
   paused: boolean;
   input: React.RefObject<Controls>;
   onPosition: (p: Point) => void;
@@ -117,7 +119,7 @@ export function Player({
         keys.current.delete("Space");
       }
       input.current.jump = false;
-      const floor = groundHeight(p.x, p.z, p.y);
+      const floor = groundHeight(p.x, p.z, p.y, map);
       velocity.current -= 17 * delta;
       const nextY = Math.max(floor, p.y + velocity.current * delta);
       const dx =
@@ -126,8 +128,15 @@ export function Player({
           (-x * Math.sin(yaw.current) + z * Math.cos(yaw.current)) *
           4.5 *
           delta;
-      const [nx, nz] = moveWithCollision(p.x, p.z, dx, dz, nextY);
-      p.set(nx, nextY, nz);
+      const [nx, nz] = moveWithCollision(
+        p.x,
+        p.z,
+        dx,
+        dz,
+        Math.max(nextY, map.ground(p.x + dx, p.z + dz)),
+        map,
+      );
+      p.set(nx, Math.max(nextY, map.ground(nx, nz)), nz);
       if (nextY <= floor) {
         velocity.current = 0;
         airborne.current = false;
@@ -153,7 +162,7 @@ export function Player({
       p.y + 5.5,
       p.z + Math.cos(yaw.current) * 8.5,
     );
-    const safe = safeCamera(target.current, desired.current);
+    const safe = safeCamera(target.current, desired.current, map);
     if (!initialized.current) {
       camera.position.set(safe.x, safe.y, safe.z);
       initialized.current = true;
@@ -162,12 +171,15 @@ export function Player({
       camera.position.lerp(desired.current.set(safe.x, safe.y, safe.z), blend);
     }
     // Recheck the smoothed line as well, so orbiting cannot cut through a building.
-    const corrected = safeCamera(target.current, camera.position);
+    const corrected = safeCamera(target.current, camera.position, map);
     camera.position.set(corrected.x, Math.max(1.5, corrected.y), corrected.z);
     camera.lookAt(target.current);
   });
   return (
-    <group ref={group} position={[SPAWN[0], 0, SPAWN[1]]}>
+    <group
+      ref={group}
+      position={[map.spawn[0], map.ground(...map.spawn), map.spawn[1]]}
+    >
       <group ref={visual} rotation={[0, Math.PI, 0]}>
         <Avatar
           variant={variant}

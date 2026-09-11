@@ -1,3 +1,4 @@
+export type MapId = "krakatau" | "raja-ampat";
 export type ProfileId = "dinar" | "delisha";
 export type AvatarId = 0 | 1 | 2;
 export type MissionId = "welcome" | "science" | "letters" | "count";
@@ -7,24 +8,37 @@ export type Point = [number, number];
 export interface Progress {
   avatar: AvatarId;
   started: boolean;
-  completed: MissionId[];
-  items: ItemId[];
+  completed: string[];
+  items: string[];
   stars: string[];
   points: number;
   badges: string[];
   unlocked: string[];
   labRound: number;
+  activeMissions: string[];
+  trackedMission: string | null;
+}
+export interface PlayerProgress {
+  avatar: AvatarId;
+  started: boolean;
+  lastMap: MapId;
+  maps: Record<MapId, Progress>;
 }
 export interface SaveData {
-  version: 1;
+  version: 2;
   active: ProfileId | null;
   muted: boolean;
-  profiles: Record<ProfileId, Progress>;
+  profiles: Record<ProfileId, PlayerProgress>;
 }
 export interface WorldObject {
   id: string;
   name: string;
   kind:
+    | "npc"
+    | "quest"
+    | "board"
+    | "info"
+    | "bonus"
     | "guide"
     | "teacher"
     | "item"
@@ -35,9 +49,23 @@ export interface WorldObject {
     | "lab"
     | "count";
   position: Point;
+  missionId?: string;
+  visual?:
+    | "trash"
+    | "crab"
+    | "bird"
+    | "fish"
+    | "coral"
+    | "sample"
+    | "plant"
+    | "crystal"
+    | "observe";
+  description?: string;
+  keepAfterCollect?: boolean;
+  npcAvatar?: AvatarId;
 }
 export interface Quiz {
-  id: QuizId;
+  id: string;
   title: string;
   prompt: string;
   illustration: string;

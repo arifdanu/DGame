@@ -9,6 +9,8 @@ export const freshProgress = (): Progress => ({
   badges: [],
   unlocked: ["village", "beach", "forest", "garden"],
   labRound: 0,
+  activeMissions: [],
+  trackedMission: null,
 });
 export const BADGES: Record<MissionId, string> = {
   welcome: "Sahabat Guru",
@@ -45,13 +47,13 @@ export function applyProgress(p: Progress, a: Action): Progress {
   if (a.id === "welcome" && !p.started) return p;
   if (
     a.id === "science" &&
-    (p.items.length !== 3 || !p.completed.includes("welcome"))
+    (scienceItems(p).length !== 3 || !p.completed.includes("welcome"))
   )
     return p;
   if (a.id === "letters" && !p.completed.includes("science")) return p;
   if (
     a.id === "count" &&
-    (!p.completed.includes("letters") || p.stars.length !== 5)
+    (!p.completed.includes("letters") || countStars(p).length !== 5)
   )
     return p;
   return {
@@ -72,14 +74,14 @@ export function activeMission(p: Progress) {
     };
   if (!p.completed.includes("science"))
     return {
-      title: `Temukan Benda Sains ${p.items.length}/3`,
+      title: `Temukan Benda Sains ${scienceItems(p).length}/3`,
       hint:
-        p.items.length === 3
+        scienceItems(p).length === 3
           ? "Kembali ke Bu Guru untuk kuis."
           : "Cari batu, daun, dan kerang di pantai.",
       index: 2,
       target:
-        p.items.length === 3
+        scienceItems(p).length === 3
           ? "teacher"
           : ["rock", "leaf", "shell"].find(
               (id) => !p.items.includes(id as ItemId),
@@ -94,14 +96,14 @@ export function activeMission(p: Progress) {
     };
   if (!p.completed.includes("count"))
     return {
-      title: `Hitung Bintang ${p.stars.length}/5`,
+      title: `Hitung Bintang ${countStars(p).length}/5`,
       hint:
-        p.stars.length === 5
+        countStars(p).length === 5
           ? "Kunjungi papan hitung di taman."
           : "Kumpulkan lima bintang di taman.",
       index: 4,
       target:
-        p.stars.length === 5
+        countStars(p).length === 5
           ? "count"
           : Array.from({ length: 5 }, (_, i) => `star-${i}`).find(
               (id) => !p.stars.includes(id),
@@ -114,3 +116,8 @@ export function activeMission(p: Progress) {
     target: "lab",
   };
 }
+
+export const scienceItems = (p: Progress) =>
+  p.items.filter((id) => ["rock", "leaf", "shell"].includes(id));
+export const countStars = (p: Progress) =>
+  p.stars.filter((id) => /^star-[0-4]$/.test(id));

@@ -1,14 +1,35 @@
 import { useSyncExternalStore } from "react";
-import type { SaveData, Progress, ProfileId } from "../data/types";
+import type {
+  SaveData,
+  Progress,
+  ProfileId,
+  PlayerProgress,
+  MapId,
+} from "../data/types";
 import { freshProgress } from "../missions/progress";
-export const SAVE_KEY = "krakatau-pintar:v1";
+import { MAPS } from "../maps/mapRegistry";
+import { validLegacySave } from "../storage/legacyValidation";
+export const SAVE_KEY = "krakatau-pintar:v2";
+export const LEGACY_SAVE_KEY = "krakatau-pintar:v1";
+export const freshPlayer = (): PlayerProgress => ({
+  avatar: 0,
+  started: false,
+  lastMap: "krakatau",
+  maps: {
+    krakatau: freshProgress(),
+    "raja-ampat": {
+      ...freshProgress(),
+      unlocked: MAPS["raja-ampat"].areas.map((a) => a.id),
+    },
+  },
+});
 export const initialSave = (): SaveData => ({
-  version: 1,
+  version: 2,
   active: null,
   muted: false,
-  profiles: { dinar: freshProgress(), delisha: freshProgress() },
+  profiles: { dinar: freshPlayer(), delisha: freshPlayer() },
 });
-const object = (v: unknown): v is Record<string, unknown> =>
+const obj = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
 const unique = (v: unknown, allowed?: string[]): v is string[] =>
   Array.isArray(v) &&
@@ -16,62 +37,138 @@ const unique = (v: unknown, allowed?: string[]): v is string[] =>
   new Set(v).size === v.length;
 const integer = (v: unknown) =>
   typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
-function validProgress(v: unknown): v is Progress {
+function validProgress(v: unknown, mapId: MapId): v is Progress {
   if (
-    !object(v) ||
-    ![0, 1, 2].includes(Number(v.avatar)) ||
-    typeof v.avatar !== "number" ||
+    !obj(v) ||
+    ![0, 1, 2].includes(v.avatar as number) ||
     typeof v.started !== "boolean" ||
     !integer(v.points) ||
     !integer(v.labRound)
   )
     return false;
+  const map = MAPS[mapId];
   if (
-    !unique(v.completed, ["welcome", "science", "letters", "count"]) ||
-    !unique(v.items, ["rock", "leaf", "shell"]) ||
-    !unique(v.stars, ["star-0", "star-1", "star-2", "star-3", "star-4"]) ||
+    !unique(v.completed, map.missionIds) ||
+    !unique(
+      v.items,
+      map.objects
+        .filter((o) => o.kind === "item" || o.kind === "quest")
+        .map((o) => o.id),
+    ) ||
+    !unique(
+      v.stars,
+      map.objects
+        .filter((o) => o.kind === "star" || o.kind === "bonus")
+        .map((o) => o.id),
+    ) ||
     !unique(v.badges) ||
-    !unique(v.unlocked)
+    !unique(v.unlocked) ||
+    !unique(v.activeMissions, map.missionIds)
   )
     return false;
   if (
-    v.completed.includes("science") &&
-    (v.items.length !== 3 || !v.completed.includes("welcome"))
+    v.trackedMission !== null &&
+    !map.missionIds.includes(v.trackedMission as string)
   )
     return false;
-  if (v.completed.includes("letters") && !v.completed.includes("science"))
+  if (v.activeMissions.some((id) => (v.completed as string[]).includes(id)))
     return false;
-  if (
-    v.completed.includes("count") &&
-    (v.stars.length !== 5 || !v.completed.includes("letters"))
-  )
-    return false;
+  if (mapId === "krakatau") {
+    if (
+      v.completed.includes("science") &&
+      (!["rock", "leaf", "shell"].every((id) =>
+        (v.items as string[]).includes(id),
+      ) ||
+        !v.completed.includes("welcome"))
+    )
+      return false;
+    if (v.completed.includes("letters") && !v.completed.includes("science"))
+      return false;
+    if (
+      v.completed.includes("count") &&
+      (!v.completed.includes("letters") ||
+        ![0, 1, 2, 3, 4].every((i) =>
+          (v.stars as string[]).includes(`star-${i}`),
+        ))
+    )
+      return false;
+  }
   return true;
+}
+function validPlayer(v: unknown): v is PlayerProgress {
+  return (
+    obj(v) &&
+    [0, 1, 2].includes(v.avatar as number) &&
+    typeof v.started === "boolean" &&
+    ["krakatau", "raja-ampat"].includes(v.lastMap as string) &&
+    obj(v.maps) &&
+    validProgress(v.maps.krakatau, "krakatau") &&
+    validProgress(v.maps["raja-ampat"], "raja-ampat")
+  );
 }
 export function validSave(v: unknown): v is SaveData {
   return (
-    object(v) &&
-    v.version === 1 &&
+    obj(v) &&
+    v.version === 2 &&
     [null, "dinar", "delisha"].includes(v.active as string | null) &&
     typeof v.muted === "boolean" &&
-    object(v.profiles) &&
-    validProgress(v.profiles.dinar) &&
-    validProgress(v.profiles.delisha)
+    obj(v.profiles) &&
+    validPlayer(v.profiles.dinar) &&
+    validPlayer(v.profiles.delisha)
   );
 }
-let warning = "";
-let blocked = false;
+export function migrateLegacy(v: unknown): SaveData | null {
+  if (!validLegacySave(v)) return null;
+  const legacy = v as {
+    active: ProfileId | null;
+    muted: boolean;
+    profiles: Record<ProfileId, Progress>;
+  };
+  const next = initialSave();
+  next.active = legacy.active;
+  next.muted = legacy.muted;
+  for (const id of ["dinar", "delisha"] as const) {
+    const old = legacy.profiles[id];
+    next.profiles[id] = {
+      ...freshPlayer(),
+      avatar: old.avatar,
+      started: old.started,
+      maps: {
+        ...freshPlayer().maps,
+        krakatau: { ...old, activeMissions: [], trackedMission: null },
+      },
+    };
+  }
+  return next;
+}
+let warning = "",
+  blocked = false;
 function read(): SaveData {
+  warning = "";
+  blocked = false;
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return initialSave();
-    const data: unknown = JSON.parse(raw);
-    if (!validSave(data)) throw new Error("invalid");
-    return data;
-  } catch (error) {
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      if (!validSave(parsed)) throw new Error("invalid");
+      return parsed;
+    }
+    const old = localStorage.getItem(LEGACY_SAVE_KEY);
+    if (!old) return initialSave();
+    const migrated = migrateLegacy(JSON.parse(old));
+    if (!migrated) throw new Error("invalid");
+    // Preserve the original v1 record as a backup; never overwrite it during migration.
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(migrated));
+    } catch {
+      warning =
+        "Migrasi siap, tetapi penyimpanan penuh. Biarkan halaman terbuka sampai progres dapat disimpan.";
+    }
+    return migrated;
+  } catch (e) {
     blocked =
-      error instanceof SyntaxError ||
-      (error instanceof Error && error.message === "invalid");
+      e instanceof SyntaxError ||
+      (e instanceof Error && e.message === "invalid");
     warning = blocked
       ? "Data petualangan perlu diperiksa. Data asli tetap disimpan; lihat panduan pemulihan di README."
       : "Penyimpanan browser tidak tersedia. Progres hanya bertahan selama halaman ini terbuka.";
@@ -87,7 +184,9 @@ function emit() {
 }
 export function updateSave(fn: (d: SaveData) => SaveData) {
   if (blocked) return;
-  data = fn(data);
+  const next = fn(data);
+  if (!validSave(next)) throw new Error("Perubahan progres tidak valid");
+  data = next;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     warning = "";
@@ -97,11 +196,24 @@ export function updateSave(fn: (d: SaveData) => SaveData) {
   }
   emit();
 }
-export function updateProgress(id: ProfileId, fn: (p: Progress) => Progress) {
+export function updatePlayer(
+  id: ProfileId,
+  fn: (p: PlayerProgress) => PlayerProgress,
+) {
   updateSave((d) => ({
     ...d,
     profiles: { ...d.profiles, [id]: fn(d.profiles[id]) },
   }));
+}
+export function updateProgress(
+  id: ProfileId,
+  fn: (p: Progress) => Progress,
+  mapId?: MapId,
+) {
+  updatePlayer(id, (p) => {
+    const map = mapId || p.lastMap;
+    return { ...p, maps: { ...p.maps, [map]: fn(p.maps[map]) } };
+  });
 }
 window.addEventListener("storage", (e) => {
   if (e.key === SAVE_KEY || e.key === null) {

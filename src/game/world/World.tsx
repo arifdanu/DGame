@@ -1,14 +1,17 @@
 import { Component, useEffect } from "react";
 import type { ReactNode, RefObject } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Scenery } from "./Scenery";
+import { KrakatauMap } from "../maps/krakatau/KrakatauMap";
+import { RajaAmpatMap } from "../maps/rajaAmpat/RajaAmpatMap";
+import { MAPS } from "../maps/mapRegistry";
+import type { MapId } from "../data/types";
 import { InteractiveObjects } from "./InteractiveObjects";
 import { Player } from "../player/Player";
 import type { Controls, Point, Progress } from "../data/types";
 function PreviewCamera() {
   const { camera } = useThree();
   useEffect(() => {
-    camera.position.set(43, 38, 53);
+    camera.position.set(55, 48, 65);
     camera.lookAt(0, 0, -7);
   }, [camera]);
   return null;
@@ -49,6 +52,8 @@ export function World({
   input,
   nearby,
   onPosition,
+  mapId = "krakatau",
+  position = [0, 11],
 }: {
   preview: boolean;
   paused: boolean;
@@ -56,7 +61,10 @@ export function World({
   input: RefObject<Controls>;
   nearby: string | null;
   onPosition: (p: Point) => void;
+  mapId?: MapId;
+  position?: Point;
 }) {
+  const map = MAPS[mapId];
   return (
     <WorldBoundary>
       <Canvas
@@ -72,8 +80,15 @@ export function World({
           </div>
         }
       >
-        <Scenery preview={preview} paused={paused} />
+        {mapId === "krakatau" ? (
+          <KrakatauMap preview={preview} paused={paused} />
+        ) : (
+          <RajaAmpatMap preview={preview} paused={paused} />
+        )}
         <InteractiveObjects
+          map={map}
+          position={position}
+          preview={preview}
           progress={progress}
           nearby={nearby}
           paused={paused}
@@ -82,6 +97,7 @@ export function World({
           <PreviewCamera />
         ) : (
           <Player
+            map={map}
             variant={progress.avatar}
             paused={paused}
             input={input}
