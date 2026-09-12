@@ -36,7 +36,9 @@ React dipatok pada seri **19.2.x** karena peer dependency React Three Fiber yang
 
 Buka **Main Bersama** dari halaman utama untuk membuat/gabung room berkode enam karakter (maksimal empat pemain). Host memilih Krakatau atau Raja Ampat; pemain memakai avatar existing dengan nama panggilan rekaan. Posisi, rotasi, lompatan dan status disinkronkan melalui Supabase Presence/Broadcast. Tidak ada chat atau misi multiplayer; progres Main Sendiri tetap terpisah.
 
-Isi `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY` di `.env.local` berdasarkan [.env.example](.env.example), lalu restart Vite. Gunakan anon key saja. Tanpa konfigurasi, Main Bersama menampilkan pesan dan Main Sendiri tetap berjalan.
+Isi `VITE_SUPABASE_URL` dan salah satu dari `VITE_SUPABASE_ANON_KEY` atau `VITE_SUPABASE_PUBLISHABLE_KEY` berdasarkan [.env.example](.env.example). Kedua nama key menerima legacy anon JWT atau `sb_publishable_...`; publishable env diprioritaskan bila keduanya terisi. Gunakan `.env.local` untuk lokal lalu restart Vite. Pada Vercel, pilih scope Production/Preview yang sesuai lalu **build ulang/redeploy**: Vite memasukkan `import.meta.env` saat build, bukan saat halaman dibuka.
+
+Jika konfigurasi belum tersedia, UI dan console menyebut nama variabel yang hilang tanpa mencetak nilainya. Pesan console yang sama tidak diulang setiap retry. Main Sendiri tetap berjalan. Fase 1 hanya memakai Realtime Presence/Broadcast, tanpa tabel database.
 
 Fase ini memakai **channel publik berbasis kode** karena belum ada Auth/RLS membership; kode bukan otorisasi server. Batas empat pemain ditegakkan host aplikasi. Lihat [panduan multiplayer](docs/MULTIPLAYER.md) untuk batas privasi, konfigurasi, daftar berkas, pengujian dua browser nyata, dan pengujian protokol lokal (`npm run test:multiplayer`).
 

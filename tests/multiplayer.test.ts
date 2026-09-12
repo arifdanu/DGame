@@ -13,6 +13,7 @@ import {
 import {
   MultiplayerConfigError,
   validateConfiguration,
+  readRealtimeConfiguration,
 } from "../src/multiplayer/realtimeChannel";
 import type {
   ChannelFactory,
@@ -287,7 +288,7 @@ describe("wire validation and interpolation", () => {
     expect(codes.every(validRoomCode)).toBe(true);
     expect(new Set(codes).size).toBe(100);
   });
-  it("only accepts anon keys and safe endpoints; refuses service-role/secret keys", () => {
+  it("accepts public keys and safe endpoints; refuses service-role/secret keys", () => {
     const jwt = (role: string) =>
       `eyJhbGciOiJIUzI1NiJ9.${btoa(JSON.stringify({ role }))}.signature`;
     expect(
@@ -305,6 +306,60 @@ describe("wire validation and interpolation", () => {
     expect(() =>
       validateConfiguration("http://public.example", jwt("anon")),
     ).toThrow();
+  });
+  it("accepts publishable keys through either env name with explicit precedence", () => {
+    const url = "https://example.supabase.co";
+    const key = "sb_publishable_test-only";
+    expect(validateConfiguration(url, ` ${key} `).key).toBe(key);
+    expect(validateConfiguration(url, undefined, key).key).toBe(key);
+    expect(validateConfiguration(url, key, "  ").key).toBe(key);
+    expect(validateConfiguration(url, "unused", key).key).toBe(key);
+    expect(() =>
+      validateConfiguration(url, key, "sb_secret_test-only"),
+    ).toThrow(/VITE_SUPABASE_PUBLISHABLE_KEY/);
+  });
+  it("identifies missing variables without including configured values", () => {
+    const key = "sb_publishable_test-only";
+    expect(() => validateConfiguration(undefined, key)).toThrow(
+      /build: VITE_SUPABASE_URL\./,
+    );
+    expect(() =>
+      validateConfiguration("https://example.supabase.co", " "),
+    ).toThrow(/VITE_SUPABASE_ANON_KEY atau VITE_SUPABASE_PUBLISHABLE_KEY/);
+    expect(() => validateConfiguration(undefined, undefined)).toThrow(
+      /VITE_SUPABASE_URL; VITE_SUPABASE_ANON_KEY/,
+    );
+  });
+  it("reads Vite env names and emits a sanitized, deduplicated console diagnostic", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const key = "sb_publishable_do-not-log-this";
+    try {
+      vi.stubEnv("VITE_SUPABASE_URL", "https://example.supabase.co");
+      vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
+      vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", key);
+      expect(readRealtimeConfiguration()).toEqual({
+        url: "https://example.supabase.co",
+        key,
+      });
+      vi.stubEnv("VITE_SUPABASE_URL", "");
+      expect(readRealtimeConfiguration).toThrow(/VITE_SUPABASE_URL/);
+      expect(readRealtimeConfiguration).toThrow(/Main Sendiri/);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls)).toContain("VITE_SUPABASE_URL");
+      expect(String(warn.mock.calls)).not.toContain(key);
+      vi.stubEnv("VITE_SUPABASE_URL", "https://example.supabase.co");
+      vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "");
+      vi.stubEnv("VITE_SUPABASE_ANON_KEY", key);
+      expect(readRealtimeConfiguration().key).toBe(key);
+      vi.stubEnv("VITE_SUPABASE_ANON_KEY", "sb_secret_do-not-log-this");
+      expect(readRealtimeConfiguration).toThrow(/VITE_SUPABASE_ANON_KEY/);
+      expect(String(warn.mock.calls)).not.toContain(
+        "sb_secret_do-not-log-this",
+      );
+    } finally {
+      vi.unstubAllEnvs();
+      warn.mockRestore();
+    }
   });
   it("rejects arbitrary nickname text, NaN, out-of-bounds positions and invalid avatar IDs", () => {
     const player = {

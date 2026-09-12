@@ -16,12 +16,14 @@ Project awal belum mempunyai konfigurasi Supabase. Dependency `@supabase/supabas
 
 ```env
 VITE_SUPABASE_URL=https://PROJECT_REF.supabase.co
-VITE_SUPABASE_ANON_KEY=LEGACY_ANON_JWT_DARI_PROJECT
+# Isi salah satu key berikut:
+VITE_SUPABASE_ANON_KEY=
+VITE_SUPABASE_PUBLISHABLE_KEY=
 ```
 
-Gunakan **legacy anon key** dengan JWT role `anon`, sesuai kontrak fase ini. Jangan memakai `service_role`, secret key, password database, atau token pengguna. Validator menolak role selain `anon` dan key `sb_secret_...`; SDK tidak diinisialisasi bila konfigurasi kosong/salah. Tidak perlu membuat tabel database, skema posisi, akun/login, atau endpoint backend. Auth SDK tidak menyimpan sesi, tidak menyegarkan token pengguna, dan tidak membaca callback login.
+Gunakan **legacy anon key** dengan JWT role `anon` atau **publishable key** berawalan `sb_publishable_`. Kedua tipe diterima pada kedua nama environment key. Jika keduanya terisi, `VITE_SUPABASE_PUBLISHABLE_KEY` diprioritaskan; nilai kosong/whitespace memakai `VITE_SUPABASE_ANON_KEY`. Jangan memakai `service_role`, secret key, password database, atau token pengguna. Validator menolak role selain `anon` dan key `sb_secret_...`; SDK tidak diinisialisasi bila konfigurasi kosong/salah. Tidak perlu membuat tabel database, skema posisi, akun/login, atau endpoint backend. Auth SDK tidak menyimpan sesi, tidak menyegarkan token pengguna, dan tidak membaca callback login.
 
-Kedua variabel `VITE_` memang masuk ke build browser. Isi hanya nilai publik yang aman. File `.env.local` diabaikan Git. Setelah mengganti nilai, restart `npm run dev`; untuk deployment, isi kedua variabel pada environment hosting lalu build ulang. Konfigurasi Vercel yang ada tetap dapat digunakan.
+Variabel `VITE_` di atas memang masuk ke build browser. Isi hanya nilai publik yang aman. File `.env.local` diabaikan Git. Setelah mengganti nilai, restart `npm run dev`; untuk deployment, isi URL dan salah satu public key pada environment hosting lalu build ulang. Pada Vercel pastikan scope Production/Preview sesuai deployment yang dibuka; perubahan environment tidak mengubah bundle deployment lama. UI dan console menyebut nama variabel yang hilang atau tidak valid, tanpa nilai URL/key. Pesan console yang sama hanya dicetak sekali sampai konfigurasi berubah. Konfigurasi Vercel yang ada tetap dapat digunakan.
 
 ### Batas privasi channel fase ini
 
@@ -67,7 +69,7 @@ Rujukan resmi: [Presence](https://supabase.com/docs/guides/realtime/presence), [
 | `src/game/ui/Controls.tsx` | Opsi menyembunyikan kontrol interaksi di mode eksplorasi bersama |
 | `src/game/world/World.tsx` | Remote renderer dan pembaruan dunia ketika pause multiplayer |
 | `src/game/ui/Screens.tsx`, `Adventure.tsx`, `game.css` | Tombol Main Bersama dan layar lazy multiplayer |
-| `.env.example`, `src/vite-env.d.ts` | Kontrak kedua environment variable |
+| `.env.example`, `src/vite-env.d.ts` | Kontrak URL dan kedua alternatif public key |
 | `tests/multiplayer.test.ts` | State room, concurrency, rate, validasi, koneksi dan interpolasi |
 | `e2e/multiplayer.spec.ts`, `e2e/helpers/supabaseMock.ts` | Browser dengan SDK nyata dan simulasi protokol Realtime |
 | `e2e/multiplayer-menu.spec.ts` | UI mobile, layanan tidak tersedia, fallback single-player |
@@ -107,7 +109,7 @@ npm run test:multiplayer
 
 `test:multiplayer` menjalankan Vite terisolasi di port 5176. URL `https://realtime-test.invalid` dan JWT dummy hanya digunakan untuk tes. Playwright mengintersep WebSocket dari SDK Supabase asli, lalu mensimulasikan Phoenix join/leave, Presence, Broadcast dan ack. Pengujian ini memeriksa integrasi UI → SDK → protokol → avatar, tetapi **tidak membuktikan konfigurasi, izin, region, latensi, atau koneksi project Supabase nyata**.
 
-Pada saat implementasi, `.env.local` dan konfigurasi project Supabase belum tersedia. Aktivasi serta uji live dua browser memerlukan dua variabel di atas.
+Pada saat implementasi, `.env.local` dan konfigurasi project Supabase belum tersedia. Aktivasi serta uji live dua browser memerlukan URL dan salah satu public key di atas.
 
 Hasil pemeriksaan implementasi:
 
