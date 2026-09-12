@@ -1,3 +1,5 @@
+import type { PlayerPose, RemoteState } from "../../multiplayer/types";
+import { RemotePlayers } from "../RemotePlayers";
 import { Component, useEffect } from "react";
 import type { ReactNode, RefObject } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
@@ -52,6 +54,8 @@ export function World({
   input,
   nearby,
   onPosition,
+  onPose,
+  remotePlayers,
   mapId = "krakatau",
   position = [0, 11],
 }: {
@@ -61,6 +65,8 @@ export function World({
   input: RefObject<Controls>;
   nearby: string | null;
   onPosition: (p: Point) => void;
+  onPose?: (pose: PlayerPose) => void;
+  remotePlayers?: RemoteState[];
   mapId?: MapId;
   position?: Point;
 }) {
@@ -72,7 +78,7 @@ export function World({
         dpr={[1, 1.5]}
         camera={{ position: [43, 38, 53], fov: 45, near: 0.1, far: 250 }}
         gl={{ antialias: true, powerPreference: "high-performance" }}
-        frameloop={paused ? "demand" : "always"}
+        frameloop={paused && !remotePlayers ? "demand" : "always"}
         fallback={
           <div className="webgl-fallback">
             Browser ini belum mendukung 3D.{" "}
@@ -93,6 +99,7 @@ export function World({
           nearby={nearby}
           paused={paused}
         />
+        {remotePlayers && <RemotePlayers players={remotePlayers} />}
         {preview ? (
           <PreviewCamera />
         ) : (
@@ -102,6 +109,7 @@ export function World({
             paused={paused}
             input={input}
             onPosition={onPosition}
+            onPose={onPose}
           />
         )}
       </Canvas>

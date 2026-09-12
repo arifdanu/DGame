@@ -1,0 +1,515 @@
+.mp-menu {
+  padding-bottom: 36px;
+  background:
+    radial-gradient(ellipse at 0% 20%, #deeee8 0, transparent 55%), #fafbf2;
+  color: #294f43;
+  min-height: 100dvh;
+}
+.mp-title {
+  text-align: center;
+  max-width: 650px;
+  margin: 26px auto;
+}
+.mp-title h1 {
+  font-size: clamp(28px, 4vw, 44px);
+  margin: 10px 0;
+}
+.mp-title p,
+.mp-form > p,
+.mp-footnote {
+  color: #728675;
+}
+.mp-shell {
+  max-width: 740px;
+  margin: auto;
+  border: 1px solid #dce5d2;
+  border-radius: 28px;
+  background: #fffef8;
+  padding: 28px;
+  box-shadow: 0 10px 0 #e2e9d7;
+}
+.mp-tabs {
+  display: flex;
+  gap: 8px;
+  background: #eef2e6;
+  border-radius: 15px;
+  padding: 6px;
+  margin-bottom: 18px;
+}
+.mp-tabs button {
+  flex: 1;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: #526e5e;
+  padding: 12px;
+  font: inherit;
+  font-weight: 800;
+}
+.mp-tabs .selected {
+  background: #355f50;
+  color: #fff;
+}
+.mp-connection {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #698471;
+  font-size: 12px;
+  font-weight: 800;
+}
+.mp-connection i {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  background: #aaa;
+}
+.mp-connection.connected i {
+  background: #5b9b75;
+}
+.mp-connection.disconnected i,
+.mp-connection.closed i,
+.mp-connection.error i {
+  background: #c98469;
+}
+.mp-connection.connecting i {
+  background: #d6b667;
+}
+.mp-form h2 {
+  font-size: 25px;
+  margin-bottom: 8px;
+}
+.mp-form fieldset {
+  border: 0;
+  padding: 0;
+  margin: 18px 0;
+}
+.mp-form legend {
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.mp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 18px 0;
+  font-weight: 800;
+  font-size: 14px;
+}
+.mp-field input,
+.mp-field select {
+  border: 1px solid #cbdac7;
+  border-radius: 12px;
+  background: #fffef8;
+  padding: 12px;
+  font: inherit;
+  color: #294f43;
+  min-height: 46px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.mp-field input:focus-visible,
+.mp-field select:focus-visible {
+  outline: 3px solid #d0ac63;
+  outline-offset: 2px;
+}
+.mp-field small {
+  font-size: 11px;
+  color: #778674;
+  font-weight: 500;
+}
+.mp-map-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.mp-map-picker label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 2px solid #e2e9d8;
+  border-radius: 15px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.mp-map-picker label.selected {
+  border-color: #5f9378;
+  background: #f0f4e6;
+}
+.mp-map-picker .island-map {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+.mp-avatar-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.mp-avatar-picker label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 8px;
+  border: 2px solid #dfe6d7;
+  border-radius: 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mp-avatar-picker span {
+  font-size: 22px;
+}
+.mp-form > .k-button {
+  width: 100%;
+  margin-top: 10px;
+}
+.mp-error {
+  padding: 14px 18px;
+  background: #fff0d2;
+  border-radius: 16px;
+  color: #775a35;
+  margin: 18px 0;
+  font-size: 14px;
+}
+.mp-error .k-button {
+  margin: 4px 8px 4px 0;
+  min-height: 42px;
+}
+.mp-footnote {
+  text-align: center;
+  font-size: 12px;
+  margin: 30px auto;
+}
+.mp-lobby-grid {
+  max-width: 980px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+}
+.mp-lobby-map,
+.mp-lobby-players {
+  padding: 28px;
+  border: 1px solid #dce5d2;
+  border-radius: 28px;
+  background: #fffef8;
+}
+.mp-lobby-map {
+  text-align: center;
+}
+.mp-lobby-map > .island-map.large {
+  height: 190px;
+  width: 200px;
+}
+.mp-lobby-map h2 {
+  margin: 10px 0;
+}
+.mp-lobby-grid p {
+  color: #758671;
+  font-size: 13px;
+}
+.mp-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+.mp-code > span {
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  color: #819174;
+}
+.mp-code > strong {
+  letter-spacing: 7px;
+  font-size: 38px;
+  font-variant-numeric: tabular-nums;
+  background: #eef3e4;
+  padding: 15px 20px;
+  border-radius: 14px;
+}
+.mp-code small {
+  font-size: 11px;
+  color: #74846c;
+  text-align: center;
+}
+.mp-player-list {
+  list-style: none;
+  margin: 18px 0;
+  padding: 0;
+}
+.mp-player-list li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #e7ebdf;
+}
+.mp-player-icon {
+  font-size: 25px;
+  padding: 10px;
+  border-radius: 14px;
+}
+.mp-player-list strong,
+.mp-player-list small {
+  display: block;
+}
+.mp-player-list small {
+  font-size: 11px;
+  color: #7b876e;
+  margin-top: 5px;
+}
+.mp-lobby-players h2 > span {
+  float: right;
+  font-size: 18px;
+  color: #7b926d;
+}
+.mp-lobby-players > .k-button {
+  width: 100%;
+}
+.mp-playing {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #b4dcda;
+}
+.mp-game-top {
+  position: absolute;
+  z-index: 4;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.mp-session-chip {
+  padding: 14px 18px;
+  background: #fffcefef;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-right: auto;
+  max-width: 420px;
+}
+.mp-session-chip > strong {
+  font-size: 18px;
+}
+.mp-session-chip > span {
+  font-size: 12px;
+}
+.mp-remote-label {
+  display: inline-flex;
+  flex-direction: column;
+  white-space: nowrap;
+  padding: 5px 9px;
+  border: 2px solid;
+  background: #fffff4ec;
+  border-radius: 10px;
+  color: #345446;
+  font-size: 11px;
+  font-weight: 800;
+  pointer-events: none;
+}
+.mp-remote-label small {
+  font-size: 9px;
+  color: #b27352;
+}
+.mp-remote-label.disconnected {
+  opacity: 0.65;
+}
+.mp-minimap {
+  position: absolute;
+  top: 143px;
+  right: 20px;
+  z-index: 3;
+}
+.mp-explore-note {
+  position: absolute;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 20px;
+  padding: 8px 14px;
+  background: #fffdebbd;
+  font-size: 11px;
+  white-space: nowrap;
+  color: #526c5b;
+  pointer-events: none;
+}
+.mp-disconnected {
+  position: absolute;
+  z-index: 5;
+  top: 135px;
+  left: 20px;
+  max-width: 400px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #fff0d9;
+}
+.mp-disconnected p {
+  font-size: 13px;
+  margin-top: 0;
+}
+.mp-disconnected .k-button {
+  min-height: 40px;
+  padding: 8px 12px;
+  margin-right: 6px;
+}
+@media (max-width: 600px) {
+  .mp-shell {
+    padding: 18px;
+    border-radius: 20px;
+  }
+  .mp-lobby-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .mp-lobby-map,
+  .mp-lobby-players {
+    padding: 18px;
+  }
+  .mp-map-picker label {
+    flex-direction: column;
+    font-size: 11px;
+  }
+  .mp-avatar-picker label {
+    flex-wrap: wrap;
+    font-size: 10px;
+  }
+  .mp-avatar-picker span {
+    font-size: 20px;
+  }
+  .mp-title {
+    margin: 20px auto;
+  }
+  .mp-game-top {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    gap: 5px;
+  }
+  .mp-session-chip {
+    padding: 9px;
+    max-width: 210px;
+    border-radius: 14px;
+  }
+  .mp-session-chip > strong {
+    font-size: 12px;
+  }
+  .mp-session-chip > span {
+    font-size: 9px;
+  }
+  .mp-game-top .k-button {
+    padding: 8px;
+    min-height: 40px;
+    font-size: 10px;
+  }
+  .mp-minimap {
+    top: 123px;
+    right: 10px;
+  }
+  .mp-explore-note {
+    font-size: 9px;
+    bottom: 180px;
+  }
+  .mp-disconnected {
+    top: 135px;
+    left: 10px;
+    max-width: 230px;
+  }
+  .mp-code > strong {
+    font-size: 29px;
+  }
+  .mp-menu .k-header {
+    gap: 10px;
+  }
+  .mp-menu .k-header .k-button {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  .mp-title {
+    margin: 10px auto;
+  }
+  .mp-title h1 {
+    font-size: 26px;
+  }
+  .mp-shell {
+    padding: 18px;
+    max-width: 680px;
+  }
+  .mp-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 22px;
+  }
+  .mp-form > h2,
+  .mp-form > p,
+  .mp-form > .k-button {
+    grid-column: 1/-1;
+  }
+  .mp-form fieldset {
+    margin: 10px 0;
+  }
+  .mp-map-picker label {
+    flex-direction: column;
+    font-size: 11px;
+  }
+  .mp-avatar-picker {
+    gap: 5px;
+  }
+  .mp-avatar-picker label {
+    flex-wrap: wrap;
+    font-size: 9px;
+    padding: 7px;
+  }
+  .mp-field {
+    margin: 10px 0;
+  }
+  .mp-field small {
+    font-size: 9px;
+  }
+  .mp-lobby-grid {
+    gap: 15px;
+  }
+  .mp-lobby-map,
+  .mp-lobby-players {
+    padding: 16px;
+  }
+  .mp-lobby-map > .island-map.large {
+    height: 100px;
+    width: 110px;
+  }
+  .mp-game-top {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+  .mp-session-chip {
+    padding: 8px 12px;
+  }
+  .mp-session-chip > strong {
+    font-size: 13px;
+  }
+  .mp-minimap {
+    top: 100px;
+    right: 12px;
+    width: 80px;
+    height: 80px;
+  }
+  .mp-explore-note {
+    bottom: 16px;
+    font-size: 9px;
+  }
+  .mp-game-top .k-button {
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+}

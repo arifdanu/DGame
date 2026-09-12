@@ -35,6 +35,7 @@ export function HomeScreen({
   data,
   start,
   resume,
+  together,
   settings,
   help,
   mute,
@@ -43,6 +44,7 @@ export function HomeScreen({
   data: SaveData;
   start: () => void;
   resume: () => void;
+  together: () => void;
   settings: () => void;
   help: () => void;
   mute: () => void;
@@ -99,6 +101,12 @@ export function HomeScreen({
           {canContinue
             ? ` sebagai ${PROFILES[data.active!].name}`
             : " petualangan"}
+        </button>
+        <button
+          className="k-button secondary together-button"
+          onClick={together}
+        >
+          Main Bersama <ArrowRight size={18} />
         </button>
         <div className="home-note">
           <Leaf size={16} />

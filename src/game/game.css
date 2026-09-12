@@ -2500,3 +2500,6 @@
     min-height: 43px;
   }
 }
+
+.krakatau-app .together-button { margin-top: 8px; min-height: 44px; padding: 10px 20px; font-size: 14px; }
+@media (max-height: 750px) and (min-width: 900px) { .home-copy .home-note { margin-top: 14px; } }

@@ -1,3 +1,4 @@
+import type { PlayerPose } from "../../multiplayer/types";
 import { useEffect, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Group, Vector3 } from "three";
@@ -12,12 +13,14 @@ export function Player({
   paused,
   input,
   onPosition,
+  onPose,
 }: {
   variant: AvatarId;
   map: MapDefinition;
   paused: boolean;
   input: React.RefObject<Controls>;
   onPosition: (p: Point) => void;
+  onPose?: (pose: PlayerPose) => void;
 }) {
   const group = useRef<Group>(null),
     visual = useRef<Group>(null),
@@ -156,6 +159,17 @@ export function Player({
         timer.current = 0;
       }
     } else if (walking) setWalking(false);
+    onPose?.({
+      position: { x: p.x, y: p.y, z: p.z },
+      rotation: visual.current.rotation.y,
+      animation: paused
+        ? "idle"
+        : airborne.current
+          ? "jumping"
+          : walking
+            ? "walking"
+            : "idle",
+    });
     target.current.set(p.x, p.y + 1.35, p.z);
     desired.current.set(
       p.x + Math.sin(yaw.current) * 8.5,

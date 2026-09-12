@@ -1,6 +1,6 @@
 # Petualangan Krakatau Pintar
 
-Game edukasi sandbox 3D berbahasa Indonesia untuk **Dinar (7 tahun, kelas 2 SD)** dan **Delisha (5 tahun, persiapan SD)**. Jelajahi **Krakatau Pintar** dan **Laut Raja Ampat Pintar**: 15 area, 16 misi, dan cakupan dunia sekitar 4× versi awal. Temui guru, kumpulkan benda alam, bermain huruf, dan hitung bintang. Dunia dan tiga avatar dibuat secara procedural dengan geometry low-poly; tanpa backend, login, chat, iklan, pembelian, atau aset karakter game lain.
+Game edukasi sandbox 3D berbahasa Indonesia untuk **Dinar (7 tahun, kelas 2 SD)** dan **Delisha (5 tahun, persiapan SD)**. Jelajahi **Krakatau Pintar** dan **Laut Raja Ampat Pintar**: 15 area, 16 misi, dan cakupan dunia sekitar 4× versi awal. Temui guru, kumpulkan benda alam, bermain huruf, dan hitung bintang. Dunia dan tiga avatar dibuat secara procedural dengan geometry low-poly; tanpa login, chat, iklan, pembelian, atau aset karakter game lain. Single-player berjalan lokal; Main Bersama memakai Supabase Realtime.
 
 Mode lama **Petualangan Pulau Pintar** tetap tersedia di `/classic/`: 24 level, 120 aktivitas, panel orang tua dengan PIN, batas waktu, TTS, dan progres lama tidak dihapus. [Panduan mode latihan lama](docs/CLASSIC.md). Semua rute dalam panduan lama kini memakai awalan `/classic`; bookmark `/map`, `/play/...`, `/parent`, `/session`, dan `/rest` dialihkan otomatis.
 
@@ -19,7 +19,7 @@ Buka alamat yang dicetak Vite. Mulai dari **Mulai Bermain → pilih profil → p
 npm run dev -- --host 0.0.0.0
 ```
 
-Buka alamat jaringan yang dicetak Vite pada tablet/HP; gunakan landscape. Game tidak membutuhkan secret atau environment variable.
+Buka alamat jaringan yang dicetak Vite pada tablet/HP; gunakan landscape. Single-player tidak membutuhkan environment variable. Multiplayer membutuhkan konfigurasi publik Supabase pada bagian Main Bersama di bawah; gunakan HTTPS untuk akses antarperangkat agar API kriptografi browser tersedia.
 
 ## Build dan deploy Vercel
 
@@ -31,6 +31,14 @@ npm run preview
 `npm run build` menjalankan TypeScript strict dan membuat output Vite di `dist/`. Import repository ke Vercel, pilih preset **Vite**, install command `npm ci`, build command `npm run build`, output directory `dist`. `vercel.json` sudah menyediakan SPA fallback ke `index.html`, dengan `/assets/` dikecualikan. Tidak ada ketergantungan filesystem lokal atau URL localhost pada kode produksi. Deploy belum dilakukan dalam pekerjaan ini.
 
 React dipatok pada seri **19.2.x** karena peer dependency React Three Fiber yang dipakai belum menerima React 19.3. Gunakan `npm ci` agar versi mengikuti lockfile; jangan menggunakan `--force` atau `--legacy-peer-deps` untuk memaksa upgrade React.
+
+## Main Bersama — Fase 1
+
+Buka **Main Bersama** dari halaman utama untuk membuat/gabung room berkode enam karakter (maksimal empat pemain). Host memilih Krakatau atau Raja Ampat; pemain memakai avatar existing dengan nama panggilan rekaan. Posisi, rotasi, lompatan dan status disinkronkan melalui Supabase Presence/Broadcast. Tidak ada chat atau misi multiplayer; progres Main Sendiri tetap terpisah.
+
+Isi `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY` di `.env.local` berdasarkan [.env.example](.env.example), lalu restart Vite. Gunakan anon key saja. Tanpa konfigurasi, Main Bersama menampilkan pesan dan Main Sendiri tetap berjalan.
+
+Fase ini memakai **channel publik berbasis kode** karena belum ada Auth/RLS membership; kode bukan otorisasi server. Batas empat pemain ditegakkan host aplikasi. Lihat [panduan multiplayer](docs/MULTIPLAYER.md) untuk batas privasi, konfigurasi, daftar berkas, pengujian dua browser nyata, dan pengujian protokol lokal (`npm run test:multiplayer`).
 
 ## Kontrol
 
@@ -80,7 +88,7 @@ Meja eksperimen menawarkan latihan bergilir: warna, bentuk, hewan, penjumlahan, 
 - Menyimpan profil aktif, avatar, misi selesai, benda koleksi, bintang koleksi, jumlah hadiah, lencana, area terbuka, putaran latihan tambahan, dan mute.
 - Progres Dinar dan Delisha dipisahkan. Reset meminta konfirmasi dan hanya menghapus progres map yang dipilih untuk profil tersebut. Map lain tetap disimpan.
 - Data mode lama pada **`pulau-pintar:v1`** tetap terpisah dan tidak dimigrasikan atau dihapus.
-- Tidak ada kiriman profil ke server, analytics, mikrofon, kamera, atau layanan pihak ketiga.
+- Mode single-player tidak mengirim progres ke server. Saat Main Bersama dipilih, Supabase menerima data sesi minimal (nickname rekaan, avatar, enum profil/map, pose/status); progres, kuis dan hadiah tidak dikirim. Tidak ada analytics, mikrofon atau kamera.
 - Penyimpanan gagal memunculkan peringatan. Data rusak atau versi asing diblokir dan nilai aslinya tidak ditimpa. Untuk pemulihan: salin key tersebut melalui DevTools sebagai cadangan, perbaiki/pulihkan salinan valid, lalu reload. Jangan unggah data keluarga ke repository. Menghapus data situs juga akan menghapus progres.
 - Gunakan satu tab 3D untuk satu perangkat; penulisan simultan lintas tab belum dilindungi kunci transaksi.
 
@@ -134,5 +142,5 @@ Tes browser menggunakan konteks baru dan data sintetis, tidak menyentuh progres 
 - Efek klik, koleksi, lompat, dan misi selesai dibuat dengan Web Audio. Belum ada musik latar atau narasi lisan di mode 3D. Mute tersedia.
 - WebGL 2 dan akselerasi grafis diperlukan; perangkat tanpa dukungan tersebut mendapat pesan dan tautan latihan 2D. Pengujian mobile memakai emulasi Chrome, belum perangkat keluarga nyata atau Safari/Firefox.
 - Progres tidak disinkronkan antarperangkat, posisi avatar belum disimpan. Penyimpanan kuis dilakukan pada hadiah; kuis yang belum diselesaikan bisa dibuka kembali.
-- Bundle 3D lebih besar daripada UI biasa karena Three.js; Vite dapat menampilkan peringatan ukuran chunk. Rendering memakai geometry sederhana, pohon instanced, satu lampu bayangan, DPR maksimal 1,5, pembatas delta, dan berhenti saat pause.
+- Bundle 3D lebih besar daripada UI biasa karena Three.js; Vite dapat menampilkan peringatan ukuran chunk. Rendering memakai geometry sederhana, pohon instanced, satu lampu bayangan, DPR maksimal 1,5, dan pembatas delta. Single-player berhenti saat pause; multiplayer tetap merender avatar remote.
 - Fase berikutnya: uji langsung bersama Dinar/Delisha; sambungkan timer dan panel orang tua ke mode 3D; tambah narasi Indonesia, variasi soal, ekspor/cadangan progres, dan pengujian perangkat touch fisik.

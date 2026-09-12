@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -61,7 +68,10 @@ import {
   objectiveCount,
 } from "./missions/MissionManager";
 import "./game.css";
-type Screen = "home" | "profiles" | "avatars" | "maps" | "game";
+const MultiplayerExperience = lazy(
+  () => import("../components/multiplayer/MultiplayerExperience"),
+);
+type Screen = "home" | "profiles" | "avatars" | "maps" | "game" | "multiplayer";
 type Panel = "pause" | "settings" | "help" | "map" | "journal" | "reset" | null;
 export default function Adventure() {
   const { data, warning, blocked } = useSave();
@@ -448,6 +458,7 @@ export default function Adventure() {
           data={data}
           start={() => go("profiles")}
           resume={() => start()}
+          together={() => go("multiplayer")}
           settings={() => setPanel("settings")}
           help={() => setPanel("help")}
           mute={mute}
@@ -464,6 +475,22 @@ export default function Adventure() {
             ])
           }
         />
+      )}
+      {screen === "multiplayer" && (
+        <Suspense
+          fallback={
+            <div className="loading-world">Menyiapkan Main Bersama…</div>
+          }
+        >
+          <MultiplayerExperience
+            defaults={{
+              nickname: "Bintang Laut",
+              avatarId: String(player.avatar) as "0" | "1" | "2",
+              profileId: profile,
+            }}
+            solo={() => go("home")}
+          />
+        </Suspense>
       )}
       {screen === "profiles" && (
         <ProfileScreen

@@ -7,11 +7,13 @@ export function Controls({
   interact,
   available,
   paused,
+  showInteraction = true,
 }: {
   input: RefObject<Input>;
   interact: () => void;
   available: boolean;
   paused: boolean;
+  showInteraction?: boolean;
 }) {
   const [knob, setKnob] = useState({ x: 0, y: 0 });
   function move(e: PointerEvent<HTMLDivElement>) {
@@ -46,9 +48,13 @@ export function Controls({
         <kbd>Spasi</kbd>
         <span>Lompat</span>
         <i />
-        <kbd>E</kbd>
-        <span>Interaksi</span>
-        <i />
+        {showInteraction && (
+          <>
+            <kbd>E</kbd>
+            <span>Interaksi</span>
+            <i />
+          </>
+        )}
         <span>Geser layar untuk melihat</span>
       </div>
       <div className="camera-buttons">
@@ -119,15 +125,17 @@ export function Controls({
             <ArrowUp />
             Lompat
           </button>
-          <button
-            className="k-icon interact-touch"
-            disabled={!available}
-            aria-label="Interaksi"
-            onClick={interact}
-          >
-            <Hand />
-            Ambil / bicara
-          </button>
+          {showInteraction && (
+            <button
+              className="k-icon interact-touch"
+              disabled={!available}
+              aria-label="Interaksi"
+              onClick={interact}
+            >
+              <Hand />
+              Ambil / bicara
+            </button>
+          )}
         </div>
       </div>
     </>
