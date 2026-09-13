@@ -1,3 +1,4 @@
+import { COMMUNITY_MISSIONS } from "./communityMissions";
 import type { ProfileId, Quiz } from "../data/types";
 import type { MissionDefinition } from "./missionTypes";
 type Question = [
@@ -374,5 +375,6 @@ export const MISSIONS: MissionDefinition[] = [
     ],
     "Penjelajah Kristal",
   ),
+  ...COMMUNITY_MISSIONS,
 ];
 export const MISSION_BY_ID = Object.fromEntries(MISSIONS.map((m) => [m.id, m]));

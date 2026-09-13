@@ -172,7 +172,7 @@ function Volcano({ paused }: { paused: boolean }) {
       });
   });
   return (
-    <group position={[0, -0.2, -62]}>
+    <group position={[0, -0.2, -90]}>
       <mesh receiveShadow position={[0, -0.5, 0]}>
         <cylinderGeometry args={[15, 16, 1, 12]} />
         <meshStandardMaterial color="#d5c999" />

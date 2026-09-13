@@ -67,17 +67,30 @@ import {
   missionStatus,
   objectiveCount,
 } from "./missions/MissionManager";
+import type { RoomState } from "../multiplayer/types";
+import type { MultiplayerService } from "../multiplayer/multiplayerService";
+import { ConnectionStatus } from "../components/multiplayer/ConnectionStatus";
+import { PlayerList } from "../components/multiplayer/PlayerList";
+import { RoomCode } from "../components/multiplayer/RoomCode";
 import "./game.css";
+export interface AdventureRoom {
+  state: RoomState;
+  service: MultiplayerService;
+  leave: () => void;
+  retry: () => void;
+}
 const MultiplayerExperience = lazy(
   () => import("../components/multiplayer/MultiplayerExperience"),
 );
 type Screen = "home" | "profiles" | "avatars" | "maps" | "game" | "multiplayer";
 type Panel = "pause" | "settings" | "help" | "map" | "journal" | "reset" | null;
-export default function Adventure() {
+export default function Adventure({
+  roomSession,
+}: { roomSession?: AdventureRoom } = {}) {
   const { data, warning, blocked } = useSave();
   const [ready, setReady] = useState(false);
   const [npcId, setNpcId] = useState<string | null>(null);
-  const [screen, setScreen] = useState<Screen>("home"),
+  const [screen, setScreen] = useState<Screen>(roomSession ? "game" : "home"),
     [panel, setPanel] = useState<Panel>(null),
     [dialogue, setDialogue] = useState<Dialogue | null>(null),
     [quiz, setQuiz] = useState<string | null>(null),
@@ -90,12 +103,20 @@ export default function Adventure() {
     orbit: 0,
     resetCamera: false,
   });
-  const profile = data.active || "dinar",
+  const profile = roomSession?.state.self?.profileId || data.active || "dinar",
     player = data.profiles[profile],
-    mapId = player.lastMap,
+    mapId = roomSession?.state.room?.mapId || player.lastMap,
     map = MAPS[mapId],
     p = player.maps[mapId],
     mission = currentObjective(p, mapId);
+  const spawn = useRef<Point>(
+    roomSession?.state.self
+      ? [roomSession.state.self.position.x, roomSession.state.self.position.z]
+      : map.spawn,
+  );
+  // Pin every write to the rendered map, including when the room differs from lastMap.
+  const writeProgress: typeof updateProgress = (id, fn) =>
+    updateProgress(id, fn, mapId);
   const paused = !!panel || !!dialogue || !!quiz || !!npcId || blocked,
     preview = screen !== "game";
   const onPosition = useCallback((next: Point) => {
@@ -116,7 +137,8 @@ export default function Adventure() {
           .filter((o) => o.d < INTERACTION_RADIUS)
           .sort((a, b) => a.d - b.d)[0]?.o || null
       : null;
-  const objective = map.objects.find((o) => o.id === mission.target)!;
+  const objective =
+    map.objects.find((o) => o.id === mission.target) || map.objects[0];
   const distance = Math.round(
     Math.hypot(
       objective.position[0] - position[0],
@@ -146,6 +168,21 @@ export default function Adventure() {
       input.current.orbit = 0;
     }
   }, [paused]);
+  const roomService = roomSession?.service;
+  useEffect(() => {
+    if (roomService && !p.started)
+      updatePlayer(profile, (v) => ({
+        ...v,
+        started: true,
+        maps: {
+          ...v.maps,
+          [mapId]: applyProgress(v.maps[mapId], { type: "start" }),
+        },
+      }));
+  }, [roomService, p.started, profile, mapId]);
+  useEffect(() => {
+    roomService?.setPlayerStatus(paused ? "paused" : "playing");
+  }, [roomService, paused]);
   function notify(message: string) {
     setToast(message);
   }
@@ -184,12 +221,12 @@ export default function Adventure() {
     go("game");
   }
   function track(id: string | null) {
-    updateProgress(profile, (v) => ({ ...v, trackedMission: id }));
+    writeProgress(profile, (v) => ({ ...v, trackedMission: id }));
     setNpcId(null);
     setPanel(null);
   }
   function accept(id: string) {
-    updateProgress(profile, (v) =>
+    writeProgress(profile, (v) =>
       executeMissionCommand(
         v,
         { type: "accept", missionId: id },
@@ -228,7 +265,7 @@ export default function Adventure() {
         ]);
         break;
       case "bonus":
-        updateProgress(profile, (v) =>
+        writeProgress(profile, (v) =>
           executeMissionCommand(
             v,
             { type: "interact", objectId: nearby.id },
@@ -258,7 +295,7 @@ export default function Adventure() {
           ]);
           break;
         }
-        updateProgress(profile, (v) =>
+        writeProgress(profile, (v) =>
           executeMissionCommand(
             v,
             { type: "interact", objectId: nearby.id },
@@ -291,7 +328,7 @@ export default function Adventure() {
             ],
             action: "Mulai Misi",
             onDone: () => {
-              updateProgress(profile, (v) =>
+              writeProgress(profile, (v) =>
                 applyProgress(v, { type: "complete", id: "welcome" }),
               );
               sound("win");
@@ -317,7 +354,7 @@ export default function Adventure() {
           ]);
           break;
         }
-        updateProgress(profile, (v) =>
+        writeProgress(profile, (v) =>
           applyProgress(v, { type: "item", id: nearby.id as ItemId }),
         );
         sound("collect");
@@ -342,7 +379,7 @@ export default function Adventure() {
           ]);
           break;
         }
-        updateProgress(profile, (v) =>
+        writeProgress(profile, (v) =>
           applyProgress(v, { type: "star", id: nearby.id }),
         );
         sound("collect");
@@ -403,7 +440,7 @@ export default function Adventure() {
     if (!quiz) return;
     if (MISSION_BY_ID[quiz]) {
       const m = MISSION_BY_ID[quiz];
-      updateProgress(profile, (v) =>
+      writeProgress(profile, (v) =>
         executeMissionCommand(
           v,
           { type: "answer", missionId: quiz, answer: m.quiz[profile].answer },
@@ -416,7 +453,7 @@ export default function Adventure() {
       setQuiz(null);
       return;
     }
-    updateProgress(profile, (v) =>
+    writeProgress(profile, (v) =>
       applyProgress(
         v,
         quiz === "lab"
@@ -434,7 +471,7 @@ export default function Adventure() {
   }
   return (
     <div
-      className={`krakatau-app ${screen === "game" ? "playing" : ""}`}
+      className={`krakatau-app ${screen === "game" ? "playing" : ""} ${roomSession ? "mp-playing mission-room" : ""}`}
       data-ready={ready}
       data-map={mapId}
     >
@@ -446,11 +483,49 @@ export default function Adventure() {
             position={position}
             preview={preview}
             paused={paused}
-            progress={{ ...p, avatar: player.avatar }}
+            progress={{
+              ...p,
+              avatar: roomSession?.state.self
+                ? (Number(roomSession.state.self.avatarId) as 0 | 1 | 2)
+                : player.avatar,
+            }}
             input={input}
             nearby={nearby?.id || null}
             onPosition={onPosition}
+            onPose={roomSession?.service.setPose}
+            remotePlayers={roomSession?.state.players}
+            spawn={roomSession ? spawn.current : undefined}
           />
+        </div>
+      )}
+      {roomSession && (
+        <div className="room-session-bar">
+          <span>
+            {roomSession.state.self?.nickname} ·{" "}
+            {roomSession.state.players.length + 1}/4 ·{" "}
+            {roomSession.state.room?.roomCode}
+          </span>
+          <ConnectionStatus status={roomSession.state.status} />
+          <button
+            className="k-button secondary"
+            onClick={() => setPanel("pause")}
+          >
+            Menu room
+          </button>
+          <button className="k-button secondary" onClick={roomSession.leave}>
+            Keluar Room
+          </button>
+          {roomSession.state.status !== "connected" && (
+            <div role="alert">
+              <p>{roomSession.state.message}</p>
+              <button className="k-button" onClick={roomSession.retry}>
+                Coba Lagi
+              </button>
+              <button className="k-button" onClick={roomSession.leave}>
+                Main Sendiri
+              </button>
+            </div>
+          )}
         </div>
       )}
       {screen === "home" && (
@@ -536,6 +611,7 @@ export default function Adventure() {
             </div>
             <button
               className="mission-card"
+              data-testid="mission-hud"
               onClick={() => setPanel("journal")}
             >
               <span className="mission-icon">
@@ -543,7 +619,8 @@ export default function Adventure() {
               </span>
               <span>
                 <small>
-                  MISI {mission.index} DARI {mission.total}
+                  MISI {mission.index} DARI {mission.total} ·{" "}
+                  {p.completed.length} selesai
                 </small>
                 <strong>{mission.title}</strong>
                 <span>{mission.hint}</span>
@@ -681,6 +758,20 @@ export default function Adventure() {
       {panel === "pause" && (
         <Modal title="Istirahat sebentar?" onClose={() => setPanel(null)}>
           <p>Pulaumu menunggu. Progres disimpan di perangkat ini.</p>
+          {roomSession && (
+            <>
+              <RoomCode code={roomSession.state.room!.roomCode} />
+              <PlayerList
+                self={roomSession.state.self!}
+                players={roomSession.state.players}
+                hostId={roomSession.state.room!.hostId}
+              />
+              <p>
+                Misi dan jawaban milikmu sendiri. Keluar room untuk mengganti
+                map atau profil.
+              </p>
+            </>
+          )}
           <div className="menu-buttons">
             <button className="k-button primary" onClick={() => setPanel(null)}>
               <Play size={19} />
@@ -690,23 +781,32 @@ export default function Adventure() {
               {data.muted ? <VolumeX size={19} /> : <Volume2 size={19} />}Suara:{" "}
               {data.muted ? "mati" : "nyala"}
             </button>
-            <button className="k-button" onClick={() => go("maps")}>
-              <MapIcon size={19} />
-              Ganti map
-            </button>
-            <button className="k-button" onClick={() => go("profiles")}>
-              <Users size={19} />
-              Ganti profil
-            </button>
+            {!roomSession && (
+              <button className="k-button" onClick={() => go("maps")}>
+                <MapIcon size={19} />
+                Ganti map
+              </button>
+            )}
+            {!roomSession && (
+              <button className="k-button" onClick={() => go("profiles")}>
+                <Users size={19} />
+                Ganti profil
+              </button>
+            )}
             <button className="k-button" onClick={() => setPanel("help")}>
               <Compass size={19} />
               Panduan bermain
             </button>
-            <button className="k-button" onClick={() => setPanel("reset")}>
-              <RotateCcw size={19} />
-              Reset progres {PROFILES[profile].name}
-            </button>
-            <button className="k-button" onClick={() => go("home")}>
+            {!roomSession && (
+              <button className="k-button" onClick={() => setPanel("reset")}>
+                <RotateCcw size={19} />
+                Reset progres {PROFILES[profile].name}
+              </button>
+            )}
+            <button
+              className="k-button"
+              onClick={() => (roomSession ? roomSession.leave() : go("home"))}
+            >
               <Home size={19} />
               Kembali ke menu utama
             </button>
@@ -758,7 +858,7 @@ export default function Adventure() {
             <button
               className="k-button reset-confirm"
               onClick={() => {
-                updateProgress(profile, () => freshPlayer().maps[mapId]);
+                writeProgress(profile, () => freshPlayer().maps[mapId]);
                 go("avatars");
               }}
             >

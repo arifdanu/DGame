@@ -39,6 +39,7 @@ export interface MapDefinition extends PhysicsWorld {
   description: string;
   theme: string;
   spawn: Point;
+  spawnPoints?: Point[];
   areas: Area[];
   objects: WorldObject[];
   landmarks: LandmarkData[];
@@ -47,4 +48,5 @@ export interface MapDefinition extends PhysicsWorld {
   missionIds: string[];
 }
 export const ORIGINAL_RADIUS = 27;
-export const EXPANDED_RADIUS = ORIGINAL_RADIUS * Math.SQRT2;
+export const PREVIOUS_RADIUS = ORIGINAL_RADIUS * Math.SQRT2;
+export const EXPANDED_RADIUS = PREVIOUS_RADIUS * Math.SQRT2;

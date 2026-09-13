@@ -1,3 +1,4 @@
+import { withCommunityLayout } from "../communityLayout";
 import type { WorldObject } from "../../data/types";
 import { OBJECTS, OBSTACLES, SPAWN, ZONES } from "../../data/world";
 import {
@@ -163,7 +164,7 @@ const knowledge: Record<string, string> = {
   "k-volcano-3":
     "Material gunung api yang melapuk dapat menambah mineral tanah. Tumbuhan juga membutuhkan air, udara, dan cahaya.",
 };
-export const krakatauData: MapDefinition = {
+export const krakatauData: MapDefinition = withCommunityLayout({
   id: "krakatau",
   name: "Krakatau Pintar",
   description: "Dari desa yang akrab menuju bukit, teluk, dan penemuan baru.",
@@ -227,4 +228,4 @@ export const krakatauData: MapDefinition = {
     "k-clean",
     "k-volcano",
   ],
-};
+});

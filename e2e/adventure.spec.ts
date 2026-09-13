@@ -58,7 +58,10 @@ async function action(page: Page) {
   await page.keyboard.press("e");
 }
 async function reward(page: Page, answer: string) {
-  await page.getByRole("button", { name: answer, exact: false }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: answer, exact: false })
+    .click();
   await page.getByRole("button", { name: "Ambil hadiah" }).click();
 }
 test("Dinar completes all four missions by walking, earns rewards and resumes saved progress", async ({
@@ -146,7 +149,7 @@ test("Dinar completes all four missions by walking, earns rewards and resumes sa
     .getByRole("button", { name: "Buku petualangan", exact: true })
     .click();
   await expect(
-    page.getByText("Dinar · 4/7 misi selesai · 28 bintang"),
+    page.getByText("Dinar · 4/12 misi selesai · 28 bintang"),
   ).toBeVisible();
   await page.getByRole("button", { name: "Tutup", exact: true }).click();
   const save = await page.evaluate(

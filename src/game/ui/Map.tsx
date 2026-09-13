@@ -15,20 +15,26 @@ export function IslandMap({
     objective = map.objects.find((o) => o.id === target);
   return (
     <svg
-      viewBox="-44 -47 88 93"
+      viewBox={`${-map.radius - 6} ${-map.radius - 9} ${2 * map.radius + 12} ${2 * map.radius + 15}`}
       className={`island-map ${large ? "large" : ""}`}
       role="img"
       aria-label={`Peta ${map.name}. Titik gelap adalah posisimu, lingkaran kuning tujuan misi, segitiga guru.`}
     >
       <rect
-        x="-44"
-        y="-47"
-        width="88"
-        height="93"
+        x={-map.radius - 6}
+        y={-map.radius - 9}
+        width={2 * map.radius + 12}
+        height={2 * map.radius + 15}
         rx="12"
         fill={mapId === "krakatau" ? "#b4dedd" : "#92d4da"}
       />
-      <text x="0" y="-41" textAnchor="middle" fontSize="4" fill="#385c50">
+      <text
+        x="0"
+        y={-map.radius - 3}
+        textAnchor="middle"
+        fontSize="4"
+        fill="#385c50"
+      >
         U ↑
       </text>
       <circle

@@ -46,6 +46,7 @@ export class MultiplayerService {
   private generation = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private records: RoomPresence[] = [];
+  private spawnSlots = new Map<string, number>();
   private members = new Map<string, MultiplayerPlayer>();
   private sequences = new Map<string, number>();
   private request: RoomRequest | null = null;
@@ -304,11 +305,11 @@ export class MultiplayerService {
     if (!first && this.state.room!.roomId !== room.roomId) return;
     this.hostSeen = this.now();
     this.members = new Map(members.map((p) => [p.playerId, p]));
-    const spawn = MAPS[room.mapId].spawn;
+    const admitted = members.find((p) => p.playerId === self.playerId)!;
     const local = {
       ...self,
       mapId: room.mapId,
-      ...(first ? { position: { x: spawn[0], y: 0, z: spawn[1] } } : {}),
+      ...(first ? { position: { ...admitted.position } } : {}),
     };
     const old = new Map(this.state.players.map((p) => [p.player.playerId, p]));
     this.patch({
@@ -351,11 +352,16 @@ export class MultiplayerService {
       }
       // Reserve synchronously before any async send/Presence operation.
       if (!this.members.has(player.playerId)) {
-        const spawn = MAPS[room.mapId].spawn;
+        const map = MAPS[room.mapId];
+        const slot = [1, 2, 3].find(
+          (i) => ![...this.spawnSlots.values()].includes(i),
+        )!;
+        this.spawnSlots.set(player.playerId, slot);
+        const spawn = map.spawnPoints?.[slot] || map.spawn;
         const admitted = {
           ...player,
           mapId: room.mapId,
-          position: { x: spawn[0], y: 0, z: spawn[1] },
+          position: { x: spawn[0], y: map.ground(...spawn), z: spawn[1] },
         };
         this.members.set(player.playerId, admitted);
         this.absent.set(player.playerId, now);
@@ -481,6 +487,7 @@ export class MultiplayerService {
     }
   }
   private removeMember(id: string) {
+    this.spawnSlots.delete(id);
     this.members.delete(id);
     this.absent.delete(id);
     this.sequences.delete(id);
@@ -654,6 +661,7 @@ export class MultiplayerService {
     this.timer = null;
     this.records = [];
     this.members.clear();
+    this.spawnSlots.clear();
     this.sequences.clear();
     this.absent.clear();
     this.pendingTrack = false;

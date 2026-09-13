@@ -6,9 +6,9 @@
 
 Lobby menampilkan kode yang dapat disalin, map, avatar/nama panggilan, host, status koneksi, jumlah pemain maksimal 4, dan tombol keluar. Di dunia tersedia gerak keyboard/joystick, lompat, kamera, minimap, menu pemain, dan keluar room. Map tidak dapat diganti dalam room. Avatar remote menggunakan model existing dan interpolasi posisi/rotasi; tidak masuk daftar collision lokal.
 
-Nama panggilan dipilih dari 12 nama rekaan, bukan teks bebas. Ini mencegah permintaan nama asli dan penggunaan nickname sebagai jalur pesan. Pilihan profil dan avatar hanya berlaku pada sesi room. Tidak ada chat, voice, emote, pencarian pemain, daftar room, matchmaking, inventory bersama, atau misi multiplayer.
+Nama panggilan dipilih dari 12 nama rekaan, bukan teks bebas. Ini mencegah permintaan nama asli dan penggunaan nickname sebagai jalur pesan. Pilihan profil dan avatar hanya berlaku pada sesi room. Tidak ada chat, voice, emote, pencarian pemain, daftar room, matchmaking, inventory bersama, atau progres misi yang disinkronkan.
 
-Mode bersama hanya untuk eksplorasi. Progres single-player, avatar tersimpan, map terakhir, collectible, hadiah, dialog dan kuis tidak ditulis atau disinkronkan oleh multiplayer. Semua fitur dan misi single-player tetap tersedia melalui **Main Sendiri**.
+**Pembaruan pemulihan misi:** mode bersama kini memakai layar misi existing. Dialog, kuis, collectible dan hadiah bekerja secara lokal per profil/map, seperti single-player. Avatar tersimpan dan map terakhir solo tidak diganti oleh room; progres misi tidak pernah disinkronkan melalui Realtime. Lihat [rincian pemulihan dan 10 NPC baru](MISSION-RESTORATION.md).
 
 ## Konfigurasi Supabase
 
@@ -66,7 +66,7 @@ Rujukan resmi: [Presence](https://supabase.com/docs/guides/realtime/presence), [
 | `src/components/multiplayer/` | Menu, create/join, lobby, room code, player list, status, mode game, CSS |
 | `src/game/RemotePlayers.tsx` | Model dan label pemain remote |
 | `src/game/player/Player.tsx` | Callback pose dari player existing |
-| `src/game/ui/Controls.tsx` | Opsi menyembunyikan kontrol interaksi di mode eksplorasi bersama |
+| `src/game/ui/Controls.tsx` | Kontrol joystick, lompat dan interaksi lokal pada kedua mode |
 | `src/game/world/World.tsx` | Remote renderer dan pembaruan dunia ketika pause multiplayer |
 | `src/game/ui/Screens.tsx`, `Adventure.tsx`, `game.css` | Tombol Main Bersama dan layar lazy multiplayer |
 | `.env.example`, `src/vite-env.d.ts` | Kontrak URL dan kedua alternatif public key |
@@ -93,7 +93,7 @@ npm run build
 5. Keluar lalu ulangi dengan Raja Ampat. Kedua map tersedia untuk eksplorasi multiplayer tanpa mengubah unlock single-player.
 6. Tambah browser/profil privat lain sampai 4/4; percobaan kelima harus mendapat **Room penuh**. Setelah seorang guest keluar, coba bergabung lagi.
 7. Uji kode salah, refresh guest, host keluar, tab ditutup, dan koneksi offline singkat/lama. Periksa **Terputus**, hilangnya avatar, penutupan room host, **Coba Lagi**, dan **Main Sendiri**.
-8. Bandingkan progres single-player sebelum/sesudah; progres tidak berubah karena sesi multiplayer. Pada perangkat touch, periksa joystick dan tombol lompat.
+8. Bandingkan progres single-player sebelum/sesudah; gerakan saja tidak memberi hadiah; interaksi misi hanya menambah progres pemain lokal yang melakukannya. Pada perangkat touch, periksa joystick dan tombol lompat.
 
 Browser pertama dan kedua memerlukan konteks browser berbeda untuk pengujian yang mewakili perangkat terpisah. Untuk dua perangkat fisik, gunakan deployment HTTPS atau server LAN yang dikonfigurasi tersendiri; default Vite project hanya mendengarkan `127.0.0.1`.
 

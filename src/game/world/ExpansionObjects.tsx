@@ -18,7 +18,11 @@ export function ExpansionObject({
       <>
         <Avatar variant={o.npcAvatar || 0} paused={paused} />
         <Html center position={[0, 2.9, 0]} distanceFactor={13}>
-          <span className="npc-label">
+          <span
+            className="npc-label"
+            data-testid="npc-marker"
+            data-npc-id={o.id}
+          >
             {o.name} <b>!</b>
           </span>
         </Html>
@@ -55,6 +59,34 @@ export function ExpansionObject({
     );
   return (
     <group position={[0, o.visual === "fish" ? 0.6 : 0.15, 0]}>
+      {o.visual === "rock" && (
+        <mesh position={[0, 0.3, 0]} scale={[0.65, 0.4, 0.5]}>
+          <dodecahedronGeometry args={[1, 0]} />
+          <meshStandardMaterial color="#909b98" />
+        </mesh>
+      )}
+      {o.visual === "leaf" && (
+        <mesh position={[0, 0.5, 0]} scale={[0.3, 0.7, 0.1]}>
+          <octahedronGeometry args={[1]} />
+          <meshStandardMaterial color="#559865" />
+        </mesh>
+      )}
+      {o.visual === "flag" && (
+        <>
+          <Box position={[0, 1, 0]} size={[0.1, 2, 0.1]} color="#9b815e" />
+          <Box
+            position={[0.4, 1.7, 0]}
+            size={[0.8, 0.55, 0.1]}
+            color={
+              o.id.endsWith("1")
+                ? "#db8275"
+                : o.id.endsWith("2")
+                  ? "#ead26c"
+                  : "#70b08a"
+            }
+          />
+        </>
+      )}
       {o.visual === "trash" &&
         (o.name.includes("Daun") ? (
           <mesh rotation={[-Math.PI / 2, 0, 0.4]} scale={[0.45, 0.85, 0.1]}>

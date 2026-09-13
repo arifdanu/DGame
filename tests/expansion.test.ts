@@ -17,13 +17,13 @@ import {
 import { canStand } from "../src/game/player/physics";
 
 describe("data-driven expansion", () => {
-  it("preserves the original world and expands walkable footprint approximately fourfold", () => {
+  it("preserves the original world and expands walkable footprint approximately eightfold from the original", () => {
     for (const original of OBJECTS)
       expect(MAPS.krakatau.objects).toContainEqual(original);
     let oldArea = 0,
       newArea = 0;
-    for (let x = -39; x <= 39; x += 0.5)
-      for (let z = -39; z <= 39; z += 0.5) {
+    for (let x = -55; x <= 55; x += 0.5)
+      for (let z = -55; z <= 55; z += 0.5) {
         if (
           canStand(x, z, 0, {
             radius: ORIGINAL_RADIUS,
@@ -35,10 +35,10 @@ describe("data-driven expansion", () => {
         for (const map of Object.values(MAPS))
           if (canStand(x, z, map.ground(x, z), map)) newArea++;
       }
-    expect(newArea / oldArea).toBeGreaterThan(3.8);
-    expect(newArea / oldArea).toBeLessThan(4.5);
-    expect(MAPS.krakatau.areas).toHaveLength(8);
-    expect(MAPS["raja-ampat"].areas).toHaveLength(7);
+    expect(newArea / oldArea).toBeGreaterThan(7.6);
+    expect(newArea / oldArea).toBeLessThan(8.7);
+    expect(MAPS.krakatau.areas).toHaveLength(13);
+    expect(MAPS["raja-ampat"].areas).toHaveLength(12);
   });
   it("all new objectives and NPCs are inside the world and reachable on a connected walking grid", () => {
     for (const map of Object.values(MAPS)) {
@@ -95,7 +95,14 @@ describe("data-driven expansion", () => {
           );
           expect(MAPS[mapId].areas.some((a) => a.id === m.areaId)).toBe(true);
           for (const q of Object.values(m.quiz))
-            expect(q.options).toContain(q.answer);
+            if (q.order)
+              expect(
+                q.options
+                  .slice()
+                  .sort((a, b) => Number(a) - Number(b))
+                  .join(""),
+              ).toBe(q.answer);
+            else expect(q.options).toContain(q.answer);
           expect(m.quiz.dinar.prompt).not.toBe(m.quiz.delisha.prompt);
           expect(
             command(
@@ -245,4 +252,34 @@ describe("data-driven expansion", () => {
     p.maps["raja-ampat"] = freshProgress();
     expect(p.maps.krakatau.points).toBe(5);
   });
+});
+
+it("provides ten named missions, doubles each previous footprint and keeps four spawns clear", async () => {
+  const { COMMUNITY_MISSIONS } =
+    await import("../src/game/missions/communityMissions");
+  const { PREVIOUS_RADIUS } = await import("../src/game/maps/mapTypes");
+  expect(COMMUNITY_MISSIONS.map((m) => m.npcName).sort()).toEqual(
+    [
+      "Ustazah Eva",
+      "Ustazah Rima",
+      "Umi Icha",
+      "Umi Dini",
+      "Umi Resa",
+      "Umi Safa",
+      "Bunda Danti",
+      "Teteh Nabila",
+      "Nenek Gema",
+      "Nenek Uti",
+    ].sort(),
+  );
+  for (const map of Object.values(MAPS)) {
+    expect((map.radius / PREVIOUS_RADIUS) ** 2).toBeCloseTo(2);
+    expect(map.spawnPoints).toHaveLength(4);
+    for (const [i, p] of map.spawnPoints!.entries()) {
+      expect(canStand(p[0], p[1], map.ground(...p), map)).toBe(true);
+      for (const q of map.spawnPoints!.slice(i + 1))
+        expect(Math.hypot(p[0] - q[0], p[1] - q[1])).toBeGreaterThan(2.5);
+    }
+    expect(canStand(map.radius + 0.1, 0, 0, map)).toBe(false);
+  }
 });

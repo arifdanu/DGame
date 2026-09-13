@@ -51,6 +51,9 @@ export interface WorldObject {
   position: Point;
   missionId?: string;
   visual?:
+    | "rock"
+    | "leaf"
+    | "flag"
     | "trash"
     | "crab"
     | "bird"

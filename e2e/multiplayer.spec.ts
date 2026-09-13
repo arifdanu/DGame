@@ -1,3 +1,5 @@
+import { interact, walk } from "./helpers/missionNavigation";
+import { COMMUNITY_MISSIONS } from "../src/game/missions/communityMissions";
 import { expect, test, type Page, type Browser } from "@playwright/test";
 import { SupabaseMock } from "./helpers/supabaseMock";
 import { NICKNAMES } from "../src/multiplayer/roomCode";
@@ -74,10 +76,7 @@ for (const mapId of ["krakatau", "raja-ampat"])
         if (m.type() === "error") errors.push(m.text());
       });
     }
-    const before = await host.page.evaluate(
-      (key) => localStorage.getItem(key),
-      KEY,
-    );
+
     const code = await create(host.page, mapId);
     await join(guest.page, code, 2);
     await expect(
@@ -129,12 +128,15 @@ for (const mapId of ["krakatau", "raja-ampat"])
         Number(await remote(guest.page, NICKNAMES[0]).getAttribute("data-x")),
       )
       .toBeGreaterThan(1.5);
+    const guestX = Number(
+      await remote(host.page, NICKNAMES[2]).getAttribute("data-x"),
+    );
     await move(guest.page, "a");
     await expect
       .poll(async () =>
         Number(await remote(host.page, NICKNAMES[2]).getAttribute("data-x")),
       )
-      .toBeLessThan(-1.5);
+      .toBeLessThan(guestX - 1.5);
     await expect
       .poll(async () =>
         Math.abs(
@@ -155,17 +157,21 @@ for (const mapId of ["krakatau", "raja-ampat"])
         Number(await remote(guest.page, NICKNAMES[0]).getAttribute("data-y")),
       )
       .toBeGreaterThan(0.4);
-    await expect(
-      guest.page.getByRole("button", { name: "Interaksi", exact: true }),
-    ).toHaveCount(0);
+    await expect(guest.page.getByTestId("mission-hud")).toBeVisible();
     expect(
       await guest.page
         .getByRole("button", { name: "Ganti map", exact: true })
         .count(),
     ).toBe(0);
     expect(
-      await host.page.evaluate((key) => localStorage.getItem(key), KEY),
-    ).toBe(before);
+      await host.page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key)!).profiles.dinar.maps,
+        KEY,
+      ),
+    ).toMatchObject({
+      krakatau: { completed: [] },
+      "raja-ampat": { completed: [] },
+    });
     if (mapId === "raja-ampat") {
       await guest.page.setViewportSize({ width: 390, height: 844 });
       expect(
@@ -289,3 +295,138 @@ test("real SDK with simulated Realtime: brief reconnect and host disconnection t
   await host.context.close();
   await guest.context.close();
 });
+
+for (const mapId of ["krakatau", "raja-ampat"] as const)
+  test(`local missions remain private at the same NPC in a ${mapId} room`, async ({
+    browser,
+  }) => {
+    test.setTimeout(240000);
+    const hub = new SupabaseMock();
+    const host = await newPlayer(browser, hub, "mission-host");
+    const guest = await newPlayer(browser, hub, "mission-guest");
+    const errors: string[] = [];
+    for (const p of [host.page, guest.page]) {
+      p.on("pageerror", (e) => errors.push(e.message));
+      p.on("console", (m) => {
+        if (m.type() === "error") errors.push(m.text());
+      });
+    }
+    const code = await create(host.page, mapId);
+    await join(guest.page, code, 1);
+    await expect(guest.page.getByTestId("room-count")).toHaveText("2/4");
+    await start(host.page);
+    await start(guest.page);
+    const snapshot = (page: Page) =>
+      page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), KEY);
+    // Original NPC flow is restored too, not just the new community tasks.
+    if (mapId === "krakatau") {
+      await interact(host.page, "teacher", mapId);
+      await host.page
+        .getByRole("button", { name: "Lanjut", exact: true })
+        .click();
+      await host.page
+        .getByRole("button", { name: "Mulai Misi", exact: true })
+        .click();
+      expect(
+        (await snapshot(host.page)).profiles.dinar.maps.krakatau.completed,
+      ).toContain("welcome");
+      expect(
+        (await snapshot(guest.page)).profiles.delisha.maps.krakatau.completed,
+      ).toEqual([]);
+    } else {
+      await interact(host.page, "ra-teacher", mapId);
+      await host.page
+        .getByRole("button", {
+          name: "Mulai Misi: Selamatkan Pantai",
+          exact: true,
+        })
+        .click();
+      expect(
+        (await snapshot(host.page)).profiles.dinar.maps[mapId].activeMissions,
+      ).toContain("ra-clean");
+      expect(
+        (await snapshot(guest.page)).profiles.delisha.maps[mapId]
+          .activeMissions,
+      ).toEqual([]);
+    }
+    const m = COMMUNITY_MISSIONS.find(
+      (m) => m.id === (mapId === "krakatau" ? "k-rima" : "ra-nabila"),
+    )!;
+    await interact(host.page, m.npcId, mapId);
+    await host.page
+      .getByRole("button", { name: `Mulai Misi: ${m.title}`, exact: true })
+      .click();
+    await walk(guest.page, [0, 3], mapId);
+    await interact(guest.page, m.npcId, mapId);
+    await expect(
+      guest.page.getByRole("button", {
+        name: `Mulai Misi: ${m.title}`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    await guest.page
+      .getByRole("button", { name: "Tutup", exact: true })
+      .click();
+    for (const id of m.objectives) await interact(host.page, id, mapId);
+    expect(
+      (await snapshot(guest.page)).profiles.delisha.maps[mapId].items,
+    ).not.toContain(m.objectives[0]);
+    await interact(host.page, m.npcId, mapId);
+    await host.page
+      .getByRole("button", { name: "Buka Kuis", exact: true })
+      .click();
+    await host.page
+      .getByRole("dialog")
+      .locator(".quiz-options > button")
+      .nth(m.quiz.dinar.options.indexOf(m.quiz.dinar.answer))
+      .click();
+    await host.page
+      .getByRole("button", { name: "Ambil hadiah", exact: true })
+      .click();
+    expect(
+      (await snapshot(host.page)).profiles.dinar.maps[mapId].completed,
+    ).toContain(m.id);
+    expect(
+      (await snapshot(guest.page)).profiles.delisha.maps[mapId].completed,
+    ).toEqual([]);
+    // Guest can still collect the same object and finish independently.
+    await interact(guest.page, m.npcId, mapId);
+    await guest.page
+      .getByRole("button", { name: `Mulai Misi: ${m.title}`, exact: true })
+      .click();
+    for (const id of m.objectives) await interact(guest.page, id, mapId);
+    await interact(guest.page, m.npcId, mapId);
+    await guest.page
+      .getByRole("button", { name: "Buka Kuis", exact: true })
+      .click();
+    await guest.page
+      .getByRole("dialog")
+      .locator(".quiz-options > button")
+      .nth(m.quiz.delisha.options.indexOf(m.quiz.delisha.answer))
+      .click();
+    await guest.page
+      .getByRole("button", { name: "Ambil hadiah", exact: true })
+      .click();
+    const guestSave = await snapshot(guest.page);
+    expect(guestSave.profiles.delisha.maps[mapId].completed).toEqual([m.id]);
+    expect(guestSave.profiles.dinar.maps[mapId].completed).toEqual([]);
+    expect(
+      guestSave.profiles.delisha.maps[
+        mapId === "krakatau" ? "raja-ampat" : "krakatau"
+      ].completed,
+    ).toEqual([]);
+    expect(
+      hub.messages.every(
+        (m) =>
+          !JSON.stringify(m).match(
+            /"(completed|points|items|answer|activeMissions|trackedMission)"/,
+          ),
+      ),
+    ).toBe(true);
+    await guest.page.screenshot({
+      path: `docs/multiplayer-missions-${mapId}.png`,
+    });
+    expect(errors).toEqual([]);
+    await host.context.close();
+    await guest.context.close();
+  });

@@ -1,3 +1,4 @@
+import { withCommunityLayout } from "../communityLayout";
 import type { WorldObject } from "../../data/types";
 import {
   area,
@@ -234,7 +235,7 @@ const knowledge: Record<string, string> = {
   "ra-birds-3":
     "Burung ketiga berada dekat sarang. Kita menjaga jarak; telur dan anak burung perlu dilindungi.",
 };
-export const rajaAmpatData: MapDefinition = {
+export const rajaAmpatData: MapDefinition = withCommunityLayout({
   id: "raja-ampat",
   name: "Laut Raja Ampat Pintar",
   description: "Tujuh tempat istimewa, satu janji untuk menjaga laut.",
@@ -321,4 +322,4 @@ export const rajaAmpatData: MapDefinition = {
     "ra-birds",
     "ra-cave",
   ],
-};
+});

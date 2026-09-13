@@ -14,6 +14,7 @@ export function Player({
   input,
   onPosition,
   onPose,
+  spawn = map.spawn,
 }: {
   variant: AvatarId;
   map: MapDefinition;
@@ -21,6 +22,7 @@ export function Player({
   input: React.RefObject<Controls>;
   onPosition: (p: Point) => void;
   onPose?: (pose: PlayerPose) => void;
+  spawn?: Point;
 }) {
   const group = useRef<Group>(null),
     visual = useRef<Group>(null),
@@ -190,10 +192,7 @@ export function Player({
     camera.lookAt(target.current);
   });
   return (
-    <group
-      ref={group}
-      position={[map.spawn[0], map.ground(...map.spawn), map.spawn[1]]}
-    >
+    <group ref={group} position={[spawn[0], map.ground(...spawn), spawn[1]]}>
       <group ref={visual} rotation={[0, Math.PI, 0]}>
         <Avatar
           variant={variant}

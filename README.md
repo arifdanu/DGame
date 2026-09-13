@@ -1,6 +1,6 @@
 # Petualangan Krakatau Pintar
 
-Game edukasi sandbox 3D berbahasa Indonesia untuk **Dinar (7 tahun, kelas 2 SD)** dan **Delisha (5 tahun, persiapan SD)**. Jelajahi **Krakatau Pintar** dan **Laut Raja Ampat Pintar**: 15 area, 16 misi, dan cakupan dunia sekitar 4× versi awal. Temui guru, kumpulkan benda alam, bermain huruf, dan hitung bintang. Dunia dan tiga avatar dibuat secara procedural dengan geometry low-poly; tanpa login, chat, iklan, pembelian, atau aset karakter game lain. Single-player berjalan lokal; Main Bersama memakai Supabase Realtime.
+Game edukasi sandbox 3D berbahasa Indonesia untuk **Dinar (7 tahun, kelas 2 SD)** dan **Delisha (5 tahun, persiapan SD)**. Jelajahi **Krakatau Pintar** dan **Laut Raja Ampat Pintar**: 25 area, 26 misi, dan luas setiap map 2× versi sebelum pemulihan misi. Temui guru, kumpulkan benda alam, bermain huruf, dan hitung bintang. Dunia dan tiga avatar dibuat secara procedural dengan geometry low-poly; tanpa login, chat, iklan, pembelian, atau aset karakter game lain. Single-player berjalan lokal; Main Bersama memakai Supabase Realtime.
 
 Mode lama **Petualangan Pulau Pintar** tetap tersedia di `/classic/`: 24 level, 120 aktivitas, panel orang tua dengan PIN, batas waktu, TTS, dan progres lama tidak dihapus. [Panduan mode latihan lama](docs/CLASSIC.md). Semua rute dalam panduan lama kini memakai awalan `/classic`; bookmark `/map`, `/play/...`, `/parent`, `/session`, dan `/rest` dialihkan otomatis.
 
@@ -34,7 +34,7 @@ React dipatok pada seri **19.2.x** karena peer dependency React Three Fiber yang
 
 ## Main Bersama — Fase 1
 
-Buka **Main Bersama** dari halaman utama untuk membuat/gabung room berkode enam karakter (maksimal empat pemain). Host memilih Krakatau atau Raja Ampat; pemain memakai avatar existing dengan nama panggilan rekaan. Posisi, rotasi, lompatan dan status disinkronkan melalui Supabase Presence/Broadcast. Tidak ada chat atau misi multiplayer; progres Main Sendiri tetap terpisah.
+Buka **Main Bersama** dari halaman utama untuk membuat/gabung room berkode enam karakter (maksimal empat pemain). Host memilih Krakatau atau Raja Ampat; pemain memakai avatar existing dengan nama panggilan rekaan. Posisi, rotasi, lompatan dan status disinkronkan melalui Supabase Presence/Broadcast. Misi lama dan 10 misi NPC baru dapat dimainkan di dalam room. Progres tetap lokal/pribadi per anak dan map, tanpa sinkronisasi jawaban atau hadiah. Tidak ada chat.
 
 Isi `VITE_SUPABASE_URL` dan salah satu dari `VITE_SUPABASE_ANON_KEY` atau `VITE_SUPABASE_PUBLISHABLE_KEY` berdasarkan [.env.example](.env.example). Kedua nama key menerima legacy anon JWT atau `sb_publishable_...`; publishable env diprioritaskan bila keduanya terisi. Gunakan `.env.local` untuk lokal lalu restart Vite. Pada Vercel, pilih scope Production/Preview yang sesuai lalu **build ulang/redeploy**: Vite memasukkan `import.meta.env` saat build, bukan saat halaman dibuka.
 
@@ -58,9 +58,13 @@ Fase ini memakai **channel publik berbasis kode** karena belum ada Auth/RLS memb
 
 Pada perangkat touch: joystick kiri bawah untuk berjalan, **Lompat** dan **Ambil / bicara** di kanan, serta tombol kamera. Joystick tidak tampil pada desktop dengan pointer presisi. Beralih tab otomatis menjeda permainan. Dialog, peta, kuis, dan menu juga menghentikan simulasi.
 
+## Pemulihan misi dan perluasan komunitas
+
+Layar permainan dan misi kini digunakan bersama oleh single-player dan multiplayer. Ada 10 NPC baru, HUD misi/progres, empat spawn aman terpisah dan jalur lebih lebar. [Rincian perubahan dan cara pengujian](docs/MISSION-RESTORATION.md).
+
 ## Ekspansi dua map
 
-Setelah memilih avatar, pilih map. Raja Ampat terbuka sesudah misi awal Krakatau pada profil tersebut. Gunakan **Pause → Ganti map** untuk berpindah; bintang, badge, dan progres tetap terpisah. Krakatau mendapat Bukit Observasi, Teluk Konservasi, dan Jalur Gunung. Raja Ampat memiliki tujuh area serta sembilan misi laut, mangrove, burung, dan kristal.
+Setelah memilih avatar, pilih map. Raja Ampat terbuka sesudah misi awal Krakatau pada profil tersebut. Gunakan **Pause → Ganti map** untuk berpindah; bintang, badge, dan progres tetap terpisah. Krakatau mendapat Bukit Observasi, Teluk Konservasi, dan Jalur Gunung. Raja Ampat kini memiliki 12 area serta 14 misi laut, mangrove, burung, kristal, dan komunitas.
 
 Rincian area/misi, arsitektur, migrasi, pengujian dan batasan terbaru tersedia di [laporan ekspansi](docs/EXPANSION.md).
 

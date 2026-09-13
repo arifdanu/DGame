@@ -165,6 +165,11 @@ describe("multiplayer rooms", () => {
       guests.filter((s) => s.getSnapshot().status === "full"),
     ).toHaveLength(1);
     expect(h.getSnapshot().players).toHaveLength(3);
+    const spawns = [
+      h,
+      ...guests.filter((s) => s.getSnapshot().status === "connected"),
+    ].map((s) => JSON.stringify(s.getSnapshot().self!.position));
+    expect(new Set(spawns).size).toBe(4);
   });
   it("rate limits poses, ignores duplicate sequences and wrong-map payloads", async () => {
     const h = await host(),

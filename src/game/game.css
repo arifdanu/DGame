@@ -2501,5 +2501,66 @@
   }
 }
 
-.krakatau-app .together-button { margin-top: 8px; min-height: 44px; padding: 10px 20px; font-size: 14px; }
-@media (max-height: 750px) and (min-width: 900px) { .home-copy .home-note { margin-top: 14px; } }
+.krakatau-app .together-button {
+  margin-top: 8px;
+  min-height: 44px;
+  padding: 10px 20px;
+  font-size: 14px;
+}
+@media (max-height: 750px) and (min-width: 900px) {
+  .home-copy .home-note {
+    margin-top: 14px;
+  }
+}
+
+.room-session-bar {
+  position: absolute;
+  z-index: 6;
+  bottom: 88px;
+  right: 20px;
+  max-width: 360px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 16px;
+  background: #fffcefef;
+  font-size: 11px;
+}
+.room-session-bar .k-button {
+  min-height: 36px;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+.room-session-bar > span:first-child {
+  flex-basis: 100%;
+}
+.mission-room .mission-card {
+  max-width: 340px;
+}
+.word-slots {
+  flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+  .room-session-bar {
+    top: 180px;
+    bottom: auto;
+    right: 8px;
+    max-width: 195px;
+    padding: 6px;
+    font-size: 9px;
+  }
+  .room-session-bar .k-button {
+    font-size: 9px;
+    min-height: 32px;
+  }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  .room-session-bar {
+    right: 100px;
+    bottom: 12px;
+    max-width: 300px;
+    padding: 5px;
+  }
+}

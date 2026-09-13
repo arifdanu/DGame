@@ -1,0 +1,337 @@
+import type { Point, ProfileId, Quiz, WorldObject } from "../data/types";
+import type { MissionDefinition } from "./missionTypes";
+export interface CommunityMission extends MissionDefinition {
+  npcName: string;
+  instruction: string;
+  type:
+    | "count"
+    | "reading"
+    | "matching"
+    | "cleanup"
+    | "nature"
+    | "sequence"
+    | "manners";
+  target: number;
+  position: Point;
+  areaName: string;
+  visual: WorldObject["visual"];
+  objectNames: string[];
+}
+type Question = [string, string, string[], string, string];
+function make(
+  id: string,
+  npcName: string,
+  title: string,
+  position: Point,
+  areaName: string,
+  type: CommunityMission["type"],
+  instruction: string,
+  visual: WorldObject["visual"],
+  objectNames: string[],
+  young: Question,
+  older: Question,
+  order = false,
+): CommunityMission {
+  const quiz = Object.fromEntries(
+    (["delisha", "dinar"] as ProfileId[]).map((profile) => {
+      const q = profile === "delisha" ? young : older;
+      return [
+        profile,
+        {
+          id,
+          title,
+          prompt: q[0],
+          illustration: q[1],
+          options: q[2],
+          answer: q[3],
+          explanation: q[4],
+          order,
+        },
+      ];
+    }),
+  ) as Record<ProfileId, Quiz>;
+  return {
+    id,
+    mapId: id.startsWith("k-") ? "krakatau" : "raja-ampat",
+    npcId: `npc-${id}`,
+    npcName,
+    title,
+    description: instruction,
+    instruction,
+    type,
+    target: objectNames.length,
+    position,
+    areaName,
+    areaId: `area-${id}`,
+    prerequisites: [],
+    objectives: objectNames.map((_, i) => `${id}-${i + 1}`),
+    objectiveLabel: type === "cleanup" ? "Sampah dikumpulkan" : "Penemuan",
+    reward: { stars: 6, badge: title },
+    quiz,
+    visual,
+    objectNames,
+  };
+}
+export const COMMUNITY_MISSIONS: CommunityMission[] = [
+  make(
+    "k-eva",
+    "Ustazah Eva",
+    "Lima Batu Penjelajah",
+    [-10, -43],
+    "Pelataran Observasi Aman",
+    "count",
+    "Amati lima batu dingin di jalur aman, lalu kembali kepada Ustazah Eva untuk menghitung.",
+    "rock",
+    [
+      "Batu dingin 1",
+      "Batu dingin 2",
+      "Batu dingin 3",
+      "Batu dingin 4",
+      "Batu dingin 5",
+    ],
+    [
+      "Berapa batu yang sudah kamu amati?",
+      "🪨 🪨 🪨 🪨 🪨",
+      ["4", "5", "6"],
+      "5",
+      "Satu, dua, tiga, empat, lima batu dingin.",
+    ],
+    [
+      "Ada 3 batu abu-abu dan 2 batu cokelat. Berapa semuanya?",
+      "3 + 2",
+      ["5", "4", "6"],
+      "5",
+      "3 + 2 = 5. Kita hanya mengamati batu dingin di pulau belajar.",
+    ],
+  ),
+  make(
+    "k-rima",
+    "Ustazah Rima",
+    "Kata Baik di Pos Sekolah",
+    [-40, -18],
+    "Pos Sekolah Pulau",
+    "reading",
+    "Baca kartu kata di pos sekolah, lalu lengkapi kalimat bersama Ustazah Rima.",
+    "observe",
+    ["Kartu kata: buku"],
+    [
+      "Aku membaca .... Pilih kata yang cocok.",
+      "📖",
+      ["buku", "batu", "sepatu"],
+      "buku",
+      "Aku membaca buku. Buku berisi cerita dan pengetahuan.",
+    ],
+    [
+      "Lengkapi kalimat: Nabila membaca ... di pos sekolah.",
+      "📖",
+      ["buku", "ombak", "pasir"],
+      "buku",
+      "Nabila membaca buku di pos sekolah.",
+    ],
+  ),
+  make(
+    "k-icha",
+    "Umi Icha",
+    "Warna Jalur Aman",
+    [23, -40],
+    "Zona Rambu Evakuasi Aman",
+    "matching",
+    "Amati tiga bendera warna, lalu cocokkan warna bendera bersama Umi Icha. Ikuti papan bersama pendamping.",
+    "flag",
+    ["Bendera merah", "Bendera kuning", "Bendera hijau"],
+    [
+      "Bendera hijau cocok dengan kotak mana?",
+      "🟩",
+      ["Hijau", "Merah", "Biru"],
+      "Hijau",
+      "Hijau cocok dengan hijau. Warna ini latihan mencocokkan, bukan petunjuk status gunung.",
+    ],
+    [
+      "Merah, kuning, hijau: warna ketiga adalah ...",
+      "🟥 🟨 🟩",
+      ["Hijau", "Kuning", "Biru"],
+      "Hijau",
+      "Urutannya merah, kuning, lalu hijau. Ikuti petunjuk pendamping di jalur pulau.",
+    ],
+  ),
+  make(
+    "k-dini",
+    "Umi Dini",
+    "Empat Sampah ke Tempatnya",
+    [40, 18],
+    "Tepi Pantai dan Pos Pilah",
+    "cleanup",
+    "Kumpulkan empat sampah permainan di pantai. Kembali ke pos sampah Umi Dini untuk memilih tempat membuangnya.",
+    "trash",
+    ["Botol bekas", "Bungkus bekal", "Kertas bekas", "Bungkus minuman"],
+    [
+      "Empat sampah ini dibuang ke mana?",
+      "🗑️",
+      ["Tempat sampah terpilah", "Laut", "Jalan"],
+      "Tempat sampah terpilah",
+      "Sampah masuk tempat sampah terpilah. Di luar permainan, minta bantuan orang dewasa.",
+    ],
+    [
+      "Setelah mengumpulkan 4 sampah, apa langkah berikutnya?",
+      "🗑️",
+      ["Pilah di tempat sampah", "Buang ke air", "Tinggalkan di pasir"],
+      "Pilah di tempat sampah",
+      "Pilah sampah bersama pendamping, lalu cuci tangan.",
+    ],
+  ),
+  make(
+    "k-gema",
+    "Nenek Gema",
+    "Tiga Kata Santun",
+    [-40, 18],
+    "Taman Salam",
+    "manners",
+    "Baca papan tolong, maaf, dan terima kasih, lalu pilih ucapan yang sopan.",
+    "observe",
+    ["Tolong · maaf · terima kasih"],
+    [
+      "Sesudah dibantu, kita mengucapkan ...",
+      "🤝",
+      ["Terima kasih", "Pergi sana", "Tidak mau"],
+      "Terima kasih",
+      "Terima kasih menunjukkan kita menghargai bantuan.",
+    ],
+    [
+      "Teman meminjamkan pensil. Apa ucapanmu?",
+      "✏️",
+      ["Terima kasih sudah membantu", "Pensil ini milikku", "Aku tidak peduli"],
+      "Terima kasih sudah membantu",
+      "Ucapkan terima kasih dan kembalikan barang dengan baik.",
+    ],
+  ),
+  make(
+    "ra-resa",
+    "Umi Resa",
+    "Tiga Sahabat Laut",
+    [41, 18],
+    "Laguna Pengamatan Dangkal",
+    "nature",
+    "Amati tiga ikan sehat dari jalur dangkal. Jangan mengejar atau menyentuh hewan.",
+    "fish",
+    ["Ikan kuning", "Ikan biru", "Ikan merah muda"],
+    [
+      "Berapa ikan yang kamu amati?",
+      "🐟 🐠 🐟",
+      ["3", "2", "4"],
+      "3",
+      "Ada tiga ikan. Kita menjaga air bersih untuk rumah mereka.",
+    ],
+    [
+      "Bagaimana menjaga ikan tetap sehat?",
+      "🐟 🌊",
+      ["Jaga air bersih", "Buang plastik ke air", "Tangkap semua ikan"],
+      "Jaga air bersih",
+      "Air bersih dan habitat yang terawat membantu hewan laut.",
+    ],
+  ),
+  make(
+    "ra-safa",
+    "Umi Safa",
+    "Jejak Angka Satu sampai Sepuluh",
+    [-39, 18],
+    "Pondok Angka",
+    "sequence",
+    "Temukan papan angka di pondok, lalu susun angka 1 sampai 10 bersama Umi Safa.",
+    "observe",
+    ["Papan angka 1–10"],
+    [
+      "Ketuk angka dari 1 sampai 10. Pelan-pelan, ya!",
+      "1 → 10",
+      ["3", "1", "5", "2", "4", "8", "6", "10", "9", "7"],
+      "12345678910",
+      "Urutan angka: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10.",
+    ],
+    [
+      "Susun bilangan dari yang terkecil hingga terbesar.",
+      "1 → 10",
+      ["3", "1", "5", "2", "4", "8", "6", "10", "9", "7"],
+      "12345678910",
+      "Setiap langkah bertambah satu sampai sepuluh.",
+    ],
+    true,
+  ),
+  make(
+    "ra-danti",
+    "Bunda Danti",
+    "Bekal Sehat Penjelajah",
+    [-39, -19],
+    "Kebun Bekal dan Mangrove",
+    "nature",
+    "Amati kartu bekal di pondok, lalu bantu Bunda Danti memilih bekal yang beragam.",
+    "observe",
+    ["Kartu bekal: nasi, telur, sayur, buah, air"],
+    [
+      "Pilih minuman untuk bekal kita.",
+      "💧",
+      ["Air minum", "Air laut", "Air kolam"],
+      "Air minum",
+      "Bawa air minum yang aman dari rumah bersama pendamping.",
+    ],
+    [
+      "Mana bekal yang beragam?",
+      "🍚 🥚 🥬 🍌",
+      ["Nasi, telur, sayur dan buah", "Permen saja", "Keripik saja"],
+      "Nasi, telur, sayur dan buah",
+      "Bekal beragam membantu kita tetap bertenaga saat belajar.",
+    ],
+  ),
+  make(
+    "ra-nabila",
+    "Teteh Nabila",
+    "Huruf Awal Benda",
+    [20, -40],
+    "Pondok Huruf Pesisir",
+    "reading",
+    "Temukan gambar buku dan daun, lalu pilih huruf awal bersama Teteh Nabila.",
+    "observe",
+    ["Gambar buku dan daun"],
+    [
+      "Buku dimulai dengan huruf ...",
+      "📖 BUKU",
+      ["B", "D", "S"],
+      "B",
+      "B adalah huruf awal kata buku.",
+    ],
+    [
+      "Kata daun dan dermaga memiliki huruf awal yang sama, yaitu ...",
+      "DAUN · DERMAGA",
+      ["D", "B", "A"],
+      "D",
+      "Daun dan dermaga sama-sama dimulai dengan huruf D.",
+    ],
+  ),
+  make(
+    "ra-uti",
+    "Nenek Uti",
+    "Daun di Kebun Ceria",
+    [-8, -44],
+    "Kebun Daun Hijau",
+    "matching",
+    "Amati daun pada tiga petak kebun tanpa memetiknya. Cocokkan bentuk daun bersama Nenek Uti.",
+    "leaf",
+    ["Daun lebar", "Daun panjang", "Daun kecil"],
+    [
+      "Daun ini panjang. Cocokkan dengan gambar yang mirip.",
+      "🌿 Daun panjang",
+      ["🌿 Daun panjang", "🪨 Batu bulat", "🐚 Kerang"],
+      "🌿 Daun panjang",
+      "Amati daun bersama pendamping. Jangan memakan atau memakai tanaman yang belum dikenal.",
+    ],
+    [
+      "Apa cara aman belajar tentang tanaman obat?",
+      "🌿",
+      [
+        "Amati bersama pendamping",
+        "Coba makan semua daun",
+        "Petik tanaman sembarangan",
+      ],
+      "Amati bersama pendamping",
+      "Kenali tanaman bersama orang dewasa. Permainan ini tidak mengajarkan pemakaian obat.",
+    ],
+  ),
+];

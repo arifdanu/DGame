@@ -13,7 +13,7 @@ import type { Controls, Point, Progress } from "../data/types";
 function PreviewCamera() {
   const { camera } = useThree();
   useEffect(() => {
-    camera.position.set(55, 48, 65);
+    camera.position.set(72, 65, 85);
     camera.lookAt(0, 0, -7);
   }, [camera]);
   return null;
@@ -55,6 +55,7 @@ export function World({
   nearby,
   onPosition,
   onPose,
+  spawn,
   remotePlayers,
   mapId = "krakatau",
   position = [0, 11],
@@ -66,6 +67,7 @@ export function World({
   nearby: string | null;
   onPosition: (p: Point) => void;
   onPose?: (pose: PlayerPose) => void;
+  spawn?: Point;
   remotePlayers?: RemoteState[];
   mapId?: MapId;
   position?: Point;
@@ -110,6 +112,7 @@ export function World({
             input={input}
             onPosition={onPosition}
             onPose={onPose}
+            spawn={spawn}
           />
         )}
       </Canvas>
